@@ -4,7 +4,7 @@
 
 Angular cached resource is a wrapped for [Angular ngResouce](https://github.com/angular/angular.js/tree/master/src/ngResource).
 It provide a simple way to fetch resource from localStorage to provide a quick "stale" response, and let the original resource fetching data from real API.
-The returned object will be updated when the API will responde.
+The diference with the `cache` option is: the promise is not canceled, and data are stored in localStorage instead of memory.
 
 ## Install
 
@@ -26,10 +26,68 @@ And add `cResource` as a dependency for your app:
 angular.module('myApp', ['cResource']);
 ```
 
-## Documentation
+## Differences with angular-resource
 
 ```javascript
+# angular resource
+angular.module('myApp', ['ngResource']);
+# angular cached resource
+angular.module('myApp', ['cResource']);
+```
 
+```javascript
+# angular resource
+  .factory('Customer', function($resource) {
+    return $resource('/api/customers/:id', {id: '@id'});
+  })
+# angular cached resource
+  .factory('Customer', function($cResource) {
+    return $cResource('/api/customers/:id', {id: '@id'});
+  })
+```
+
+Easy isn't it?
+
+## Documentation
+
+First, read the documentation of [angular resource](http://docs.angularjs.org/api/ngResource).
+
+Then, angular cached resource add a `$cached` property to each actions. The availalbles values of `$cache` are:
+- false: (or property undefined) Cache will not be used
+- true: The response will be cached in local storage with a storageKey equals to the URL of the resource (** beware of your filters **)
+- string: The response will be cached in local storage with this string as storageKey. As for URL, you can use the sames placeHolders
+- object: For advanced cache strategy this object contains this following properties:
+   - key: (boolean or string) who works as `$cache` property
+
+Example:
+
+```javascript
+  .factory('Customer', function($cResource) {
+    return $cResource('/api/customers/:id', {id: '@id'}, {
+      'get':    {method:'GET', $cache: 'c_:id'},
+      'query':  {method:'GET', $cache: false, isArray:true},
+    });
+  })
+
+```
+
+The response returned by angular cache resource contains a `$cacheMetadata` property. This proerty is an object with:
+
+- created: Date where the resource where stored in cache for the first time
+- created: Date where the resource where stored in cache for the last time
+- stale: When true, the properties of the resource came from cache. Otherwise false.
+
+The `stale` sub-property let you define a custom class to informe the users, that the resource is not fuly loaded.
+
+```html
+
+  <style type="text/css">
+  .stale {
+    color: gray;
+  }
+  </style>
+  ...
+  <div ng-class="{stale: resource.$cacheMetadata.stale}">{{ resource }}</div>
 
 ```
 
