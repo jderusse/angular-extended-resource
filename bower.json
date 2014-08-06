@@ -1,0 +1,8 @@
+{
+  "name": "angular-cached-resource",
+  "version": "1.0.0",
+  "main": "./angular-cached-resource.js",
+  "dependencies": {
+    "angular-resource": "~1.2.18"
+  }
+}
