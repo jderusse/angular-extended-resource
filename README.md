@@ -58,6 +58,7 @@ Then, angular cached resource add a `$cached` property to each actions. The avai
 - string: The response will be cached in local storage with this string as storageKey. As for URL, you can use the sames placeHolders
 - object: For advanced cache strategy this object contains this following properties:
    - key: (boolean or string) who works as `$cache` property
+   - splitKey: (boolean or string) store array resource on multiple subkeys
 
 Example:
 
@@ -66,6 +67,16 @@ Example:
     return $cResource('/api/customers/:id', {id: '@id'}, {
       'get':    {method:'GET', $cache: 'c_:id'},
       'query':  {method:'GET', $cache: false, isArray:true},
+    });
+  })
+
+```
+
+```javascript
+  .factory('Customer', function($cResource) {
+    return $cResource('/api/customers/:id', {id: '@id'}, {
+      'get':    {method:'GET', $cache: 'customer_:id'},
+      'query':  {method:'GET', $cache: {key: 'customers', splitKey: 'customer_:id'}, isArray:true},
     });
   })
 

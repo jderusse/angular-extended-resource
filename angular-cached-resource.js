@@ -5,10 +5,10 @@ angular.module('cResource', ['ngResource'])
     var provider = this;
 
     this.defaults = {
-      ttl: 64000,
+      ttl: 864000,
       actions: {
         'get':    {method:'GET', $cache:true},
-        'query':  {method:'GET', $cache:true, isArray:true},
+        'query':  {method:'GET', $cache:{key:true, splitKey: true}, isArray:true},
       }
     };
 
@@ -243,32 +243,31 @@ angular.module('cResource', ['ngResource'])
       $interval(function() {cache.gc();}, 30000);
       cache.gc();
 
-      var cacheWrapper = function(call, url, action) {
-        var helper = new Helper(action);
-        var route;
+      var setMetadata = function(key, value) {
+        var stored = cache.get(key);
+        value.$cacheMetadata = stored && stored.$cacheMetadata || {created: new Date()};
+        value.$cacheMetadata.updated = new Date();
+        value.$cacheMetadata.stale = true;
 
-        if (action.$cache.key === true) {
-          route = new Route(url);
-        } else if(angular.isString(action.$cache.key)) {
-          route = new Route(action.$cache);
-        } else {
-          throw angular.$$minErr('$cResource')('badmember', 'cache property is not valid.');
-        }
+        return value;
+      };
 
+      var simpleCacheWrapper = function(call, url, action) {
         var getKey = function(callArguments) {
+          var helper = new Helper(action);
+          var route;
+          if (action.$cache.key === true) {
+            route = new Route(url);
+          } else if(angular.isString(action.$cache.key)) {
+            route = new Route(action.$cache);
+          } else {
+            throw angular.$$minErr('$cResource')('badmember', 'cache property is not valid.');
+          }
+
           var parsedArguments = helper.parseArguments.apply(helper, callArguments);
           var routeParams = angular.extend({}, helper.extractParams(parsedArguments.data, action.params || {}), parsedArguments.params);
 
           return route.generateUrl(routeParams, action.url);
-        };
-
-        var setMetadata = function(key, value) {
-          var stored = cache.get(key);
-          value.$cacheMetadata = stored && stored.$cacheMetadata || {created: new Date()};
-          value.$cacheMetadata.updated = new Date();
-          value.$cacheMetadata.stale = true;
-
-          return value;
         };
 
         return function () {
@@ -288,6 +287,67 @@ angular.module('cResource', ['ngResource'])
         };
       };
 
+      var splittedCacheWrapper = function(call, url, action) {
+        var helper = new Helper(action);
+        var mainRoute;
+        if (action.$cache.key === true) {
+          mainRoute = new Route(url);
+        } else if(angular.isString(action.$cache.key)) {
+          mainRoute = new Route(action.$cache.key);
+        } else {
+          throw angular.$$minErr('$cResource')('badmember', 'cache property is not valid.');
+        }
+        var splitRoute;
+        if (action.$cache.splitKey === true) {
+          splitRoute = new Route(url);
+        } else if(angular.isString(action.$cache.splitKey)) {
+          splitRoute = new Route(action.$cache.splitKey);
+        } else {
+          throw angular.$$minErr('$cResource')('badmember', 'cache property is not valid.');
+        }
+
+        var getMainKey = function(callArguments) {
+          var parsedArguments = helper.parseArguments.apply(helper, callArguments);
+          var routeParams = angular.extend({}, helper.extractParams(parsedArguments.data, action.params || {}), parsedArguments.params);
+
+          return mainRoute.generateUrl(routeParams, action.url);
+        };
+
+        var getSplitKey = function(callArguments, item) {
+          var parsedArguments = helper.parseArguments.apply(helper, callArguments);
+          var routeParams = angular.extend({}, helper.extractParams(parsedArguments.data, action.params || {}), helper.extractParams(item, action.params || {}), parsedArguments.params);
+
+          return splitRoute.generateUrl(routeParams, action.url);
+        };
+
+        return function () {
+          var response = call.apply(this, arguments);
+          var mainKey = getMainKey(arguments);
+
+          response.lengh = 0;
+          angular.forEach(cache.get(mainKey) || [], function(splitKey) {
+            response.push(cache.get(splitKey));
+          });
+          setMetadata(mainKey, response);
+
+          response.$promise.then(function(items) {
+            var resourcesReference = [];
+            angular.forEach(items, function(item) {
+              var splitKey = getSplitKey(arguments, item);
+              cache.put(splitKey, setMetadata(splitKey, item));
+              resourcesReference.push(splitKey);
+            });
+
+            cache.put(mainKey, setMetadata(mainKey, resourcesReference));
+
+            setMetadata(mainKey, response);
+            response.$cacheMetadata.stale = false;
+          });
+
+          return response;
+        };
+      };
+
       return function(url, paramDefaults, actions, options) {
         actions = angular.extend({}, provider.defaults.actions, actions);
         var resource = $resource(url, paramDefaults, actions, options);
@@ -298,7 +358,11 @@ angular.module('cResource', ['ngResource'])
           }
 
           if (angular.isDefined(action.$cache.key) && action.$cache.key !== false) {
-            resource[name] = cacheWrapper(resource[name], url, action);
+            if (action.isArray && action.$cache.splitKey) {
+              resource[name] = splittedCacheWrapper(resource[name], url, action);
+            } else {
+              resource[name] = simpleCacheWrapper(resource[name], url, action);
+            }
           }
         });
 
