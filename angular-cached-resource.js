@@ -5,15 +5,14 @@ angular.module('cResource', ['ngResource'])
     var provider = this;
 
     this.defaults = {
+      ttl: 64000,
       actions: {
         'get':    {method:'GET', $cache:true},
         'query':  {method:'GET', $cache:true, isArray:true},
       }
     };
 
-
-    this.$get = function($resource, $window) {
-
+    this.$get = function($resource, $window, $interval) {
       function Route(template, defaults) {
         this.template = template;
         this.defaults = defaults || {};
@@ -104,8 +103,8 @@ angular.module('cResource', ['ngResource'])
         }
       };
 
-      function Cache() {
-
+      function Cache(ttl) {
+        this.ttl = ttl;
       }
 
       Cache.prototype = {
@@ -117,6 +116,7 @@ angular.module('cResource', ['ngResource'])
           delete o.v.$promise;
           delete o.v.$resolved;
           delete o.v.$cacheMetadata;
+          delete o.m.stale;
 
           var encoded = JSON.stringify(o);
           if (encoded  === undefined) {
@@ -134,6 +134,20 @@ angular.module('cResource', ['ngResource'])
           var value = s.v;
           value.$cacheMetadata = s.m;
           return value;
+        },
+        gc: function() {
+          var self = this;
+          var now = new Date().getTime();
+          angular.forEach($window.localStorage, function(data, index) {
+            if (data !== undefined && data !== 'undefined') {
+              var s = JSON.parse(data);
+              if (angular.isObject(s) && s.m && s.m.updated) {
+                if (new Date(s.m.updated).getTime() + self.ttl < now) {
+                  delete $window.localStorage[index];
+                }
+              }
+            }
+          });
         }
       };
 
@@ -225,16 +239,18 @@ angular.module('cResource', ['ngResource'])
         }
       };
 
+      var cache = new Cache(provider.defaults.ttl);
+      $interval(function() {cache.gc();}, 30000);
+      cache.gc();
+
       var cacheWrapper = function(call, url, action) {
-        var cache = new Cache();
         var helper = new Helper(action);
         var route;
-        if (action.$cache === true) {
+
+        if (action.$cache.key === true) {
           route = new Route(url);
-        } else if(angular.isString(action.$cache)) {
+        } else if(angular.isString(action.$cache.key)) {
           route = new Route(action.$cache);
-        } else if(angular.isObject(action.$cache) && action.$cache.key !== undefined) {
-          route = new Route(action.$cache.key);
         } else {
           throw angular.$$minErr('$cResource')('badmember', 'cache property is not valid.');
         }
@@ -277,7 +293,11 @@ angular.module('cResource', ['ngResource'])
         var resource = $resource(url, paramDefaults, actions, options);
 
         angular.forEach(actions, function(action, name) {
-          if (angular.isDefined(action.$cache) && action.$cache !== false) {
+          if (!angular.isObject(action.$cache)) {
+            action.$cache = {key: action.$cache};
+          }
+
+          if (angular.isDefined(action.$cache.key) && action.$cache.key !== false) {
             resource[name] = cacheWrapper(resource[name], url, action);
           }
         });
