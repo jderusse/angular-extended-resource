@@ -8,14 +8,12 @@ angular.module('cResource', ['ngResource'])
       ttl: 864000,
       actions: {
         'get':    {method:'GET', $cache:true},
-        'query':  {method:'GET', $cache:{key:true, splitKey: true}, isArray:true},
+        'query':  {method:'GET', $cache:{key:true}, isArray:true},
       }
     };
 
     this.$get = function($resource, $window, $interval) {
-      function Route(template, defaults) {
-        this.template = template;
-        this.defaults = defaults || {};
+      function Route() {
       }
 
       Route.prototype = {
@@ -55,16 +53,16 @@ angular.module('cResource', ['ngResource'])
             replace(/%2C/gi, ',').
             replace(/%20/g, (pctEncodeSpaces ? '%20' : '+'));
         },
-        generateUrl: function(params, actionUrl) {
+        generateUrl: function(template, params) {
           var self = this,
-              url = actionUrl || self.template,
+              url = template,
               val,
               encodedVal;
 
           var urlParams = {};
           angular.forEach(url.split(/\W/), function(param){
             if (param === 'hasOwnProperty') {
-              throw angular.$$minErr('$cRoute')('badname', 'hasOwnProperty is not a valid parameter name.');
+              throw angular.$$minErr('$cResource')('badname', 'hasOwnProperty is not a valid parameter name.');
             }
             if (!(/^\\d+$/.test(param)) && param &&
                  (new RegExp('(^|[^\\\\]):' + param + '(\\W|$)').test(url))) {
@@ -109,14 +107,14 @@ angular.module('cResource', ['ngResource'])
 
       Cache.prototype = {
         put: function(key, value) {
+          value.$cache = value.$cache || {};
           var o = [
-            value.$cache.created,
             value.$cache.updated,
             angular.copy(value)
           ];
-          delete o[2].$promise;
-          delete o[2].$resolved;
-          delete o[2].$cache;
+          delete o[1].$promise;
+          delete o[1].$resolved;
+          delete o[1].$cache;
 
           var encoded = JSON.stringify(o);
           if (encoded  === undefined) {
@@ -131,8 +129,8 @@ angular.module('cResource', ['ngResource'])
             return undefined;
           }
           var s = JSON.parse(data);
-          var value = s[2];
-          value.$cache = {created: s[0], updated: s[1]};
+          var value = s[1];
+          value.$cache = {updated: s[0], stale: true};
           return value;
         },
         gc: function() {
@@ -142,7 +140,7 @@ angular.module('cResource', ['ngResource'])
             if (data !== undefined && data !== 'undefined') {
               var s = JSON.parse(data);
               if (angular.isArray(s) && s.length > 1) {
-                if (s[1] + self.ttl < now) {
+                if (s[0] + self.ttl < now) {
                   delete $window.localStorage[index];
                 }
               }
@@ -151,8 +149,7 @@ angular.module('cResource', ['ngResource'])
         }
       };
 
-      function Helper(action) {
-        this.action = action;
+      function Helper() {
       }
 
       Helper.prototype = {
@@ -165,9 +162,6 @@ angular.module('cResource', ['ngResource'])
               this.lookupDottedPath(data, value.substr(1)) : value;
           });
           return ids;
-        },
-        hasBody: function() {
-          return /^(POST|PUT|PATCH)$/i.test(this.action.method);
         },
         MEMBER_NAME_REGEX: /^(\.[a-zA-Z_$][0-9a-zA-Z_$]*)+$/,
         isValidDottedPath: function(path) {
@@ -239,114 +233,119 @@ angular.module('cResource', ['ngResource'])
         }
       };
 
+      var helper = new Helper();
+      var route = new Route();
       var cache = new Cache(provider.defaults.ttl);
       $interval(function() {cache.gc();}, 30000);
       cache.gc();
 
-      var setMetadata = function(key, value) {
-        var stored = cache.get(key);
-        value.$cache = stored && stored.$cache || {created: new Date().getTime()};
-        value.$cache.updated = new Date().getTime();
-        value.$cache.stale = true;
+      function Engine(template, defaultParams, cacheSettings) {
+        this.enabled = true;
+        this.template = template;
+        this.defaultParams = defaultParams;
+        this.init(cacheSettings);
+      }
 
-        return value;
-      };
-
-      var simpleCacheWrapper = function(call, url, action) {
-        var getKey = function(callArguments) {
-          var helper = new Helper(action);
-          var route;
-          if (action.$cache.key === true) {
-            route = new Route(url);
-          } else if(angular.isString(action.$cache.key)) {
-            route = new Route(action.$cache);
-          } else {
-            throw angular.$$minErr('$cResource')('badmember', 'cache property is not valid.');
+      Engine.prototype = {
+        init: function(cacheSettings) {
+          if (!angular.isObject(cacheSettings)) {
+            return this.init({key: cacheSettings});
           }
 
-          var parsedArguments = helper.parseArguments.apply(helper, callArguments);
-          var routeParams = angular.extend({}, helper.extractParams(parsedArguments.data, action.params || {}), parsedArguments.params);
+          if (cacheSettings.key === false) {
+            this.enabled = false;
+          } else if (cacheSettings.key === true) {
+            // do nothing
+          } else if (angular.isString(cacheSettings.key)) {
+            this.template = cacheSettings.key;
+          } else {
+            throw angular.$$minErr('$cResource')('badmember', 'cacheKey property is not valid.');
+          }
 
-          return route.generateUrl(routeParams, action.url);
-        };
+          if (angular.isDefined(cacheSettings.split) && !angular.isObject(cacheSettings.split)) {
+            throw angular.$$minErr('$cResource')('badmember', 'cacheSplit property must be an object.');
+          }
 
-        return function () {
-          var response = call.apply(this, arguments);
-          var key = getKey(arguments);
-
-          angular.extend(response, cache.get(key));
-          setMetadata(key, response);
-
-          response.$promise.then(function() {
-            setMetadata(key, response);
-            cache.put(key, response);
-            response.$cache.stale = false;
+          this.splitProperties = [];
+          this.splitConfigs = cacheSettings.split || {};
+          var self = this;
+          angular.forEach(this.splitConfigs, function(config, property) {
+            self.splitProperties.push(property);
           });
+        },
+        getKey: function(callParams, callData) {
+          var routeParams = angular.extend({}, callData, helper.extractParams(callData, this.defaultParams || {}), callParams);
 
-          return response;
-        };
+          return route.generateUrl(this.template, routeParams);
+        },
+        splitResource: function (resource) {
+          var self = this;
+          angular.forEach(this.splitProperties.sort().reverse(), function(propertyPath) {
+            if (!helper.isValidDottedPath(propertyPath)) {
+              throw angular.$$minErr('badmember', 'Dotted member path "@{0}" is invalid.', propertyPath);
+            }
+
+            var engine = new Engine(undefined, {}, self.splitConfigs[propertyPath]);
+            var keys = propertyPath.split('.');
+            var subItems = [resource];
+            angular.forEach(keys, function(key, index) {
+              var last = (index === keys.length - 1);
+              var newSubItems = [];
+              angular.forEach(subItems, function(subItem) {
+                if (angular.isDefined(subItem[key])) {
+                  if (angular.isArray(subItem[key])) {
+                    newSubItems = newSubItems.concat(subItem[key]);
+                    if (last) {
+                      var cacheKeys = [];
+                      angular.forEach(subItem[key], function(subItem) {
+                        cacheKeys.push('#' + engine.store(subItem, {}, subItem));
+                      });
+                      subItem[key] = cacheKeys;
+                    }
+                  } else {
+                    newSubItems.push(subItem[key]);
+                    if (last) {
+                      var cacheKey = engine.store(subItem[key], {}, subItem[key]);
+                      subItem[key] = '#' + cacheKey;
+                    }
+                  }
+
+                }
+              });
+              subItems = newSubItems;
+            });
+          });
+        },
+        store: function (resource, callParams, callData) {
+          if (!this.enabled) {
+            return;
+          }
+
+          resource = angular.copy(resource);
+
+          this.splitResource(resource);
+          var key = this.getKey(callParams, callData);
+          cache.put(key, resource);
+
+          return key;
+        }
       };
 
-      var splittedCacheWrapper = function(call, url, action) {
-        var helper = new Helper(action);
-        var mainRoute;
-        if (action.$cache.key === true) {
-          mainRoute = new Route(url);
-        } else if(angular.isString(action.$cache.key)) {
-          mainRoute = new Route(action.$cache.key);
-        } else {
-          throw angular.$$minErr('$cResource')('badmember', 'cache property is not valid.');
-        }
-        var splitRoute;
-        if (action.$cache.splitKey === true) {
-          splitRoute = new Route(url);
-        } else if(angular.isString(action.$cache.splitKey)) {
-          splitRoute = new Route(action.$cache.splitKey);
-        } else {
-          throw angular.$$minErr('$cResource')('badmember', 'cache property is not valid.');
-        }
-
-        var getMainKey = function(callArguments) {
-          var parsedArguments = helper.parseArguments.apply(helper, callArguments);
-          var routeParams = angular.extend({}, helper.extractParams(parsedArguments.data, action.params || {}), parsedArguments.params);
-
-          return mainRoute.generateUrl(routeParams, action.url);
+      var simpleCacheWrapper = function(call, url, action, cacheSettings) {
+        Helper.prototype.hasBody = function() {
+          return /^(POST|PUT|PATCH)$/i.test(action.method);
         };
-
-        var getSplitKey = function(callArguments, item) {
-          var parsedArguments = helper.parseArguments.apply(helper, callArguments);
-          var routeParams = angular.extend({}, helper.extractParams(parsedArguments.data, action.params || {}), helper.extractParams(item, action.params || {}), parsedArguments.params);
-
-          return splitRoute.generateUrl(routeParams, action.url);
-        };
+        var engine = new Engine(action.url || url, action.params, cacheSettings);
 
         return function () {
           var response = call.apply(this, arguments);
-          var mainKey = getMainKey(arguments);
+          // todo: removed when implement engine.fetch ?
+          angular.extend(response, {$cache:{stale: true}});
 
-          response.lengh = 0;
-          angular.forEach(cache.get(mainKey) || [], function(splitKey) {
-            response.push(cache.get(splitKey));
-          });
-          setMetadata(mainKey, response);
-
-          response.$promise.then(function(items) {
-            var resourcesReference = [];
-            items = angular.copy(items);
-            response.length = 0;
-            angular.forEach(items, function(item) {
-              var splitKey = getSplitKey(arguments, item);
-              item = angular.extend(cache.get(splitKey), item);
-              cache.put(splitKey, setMetadata(splitKey, item));
-              resourcesReference.push(splitKey);
-              item.$cache.stale = false;
-              response.push(item);
-            });
-
-            cache.put(mainKey, setMetadata(mainKey, resourcesReference));
-
-            setMetadata(mainKey, response);
-            response.$cache.stale = false;
+          var parsedArguments = helper.parseArguments.apply(helper, arguments);
+          response.$promise.then(function() {
+            angular.extend(response, {$cache:{updated: new Date().getTime(), stale: false}});
+            engine.store(response, parsedArguments.params, parsedArguments.data);
           });
 
           return response;
@@ -358,16 +357,8 @@ angular.module('cResource', ['ngResource'])
         var resource = $resource(url, paramDefaults, actions, options);
 
         angular.forEach(actions, function(action, name) {
-          if (!angular.isObject(action.$cache)) {
-            action.$cache = {key: action.$cache};
-          }
-
-          if (angular.isDefined(action.$cache.key) && action.$cache.key !== false) {
-            if (action.isArray && action.$cache.splitKey) {
-              resource[name] = splittedCacheWrapper(resource[name], url, action);
-            } else {
-              resource[name] = simpleCacheWrapper(resource[name], url, action);
-            }
+          if (angular.isDefined(action.$cache) && action.$cache !== false) {
+            resource[name] = simpleCacheWrapper(resource[name], url, action, action.$cache);
           }
         });
 

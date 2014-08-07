@@ -5,6 +5,13 @@
 [X] Store date as integer
 [X] Merge splitted resource with original cache
 [ ] Split everything
+    [X] Split resource on storage
+    [ ] Restore splitted resource
+    [ ] Add option to customize params on cache (id: @id) (on parent or on split)
+    [ ] Use parents references on splitted resources
+    [ ] Handler split of isArray resources (root is an array)
+    [ ] Add metadata on splitted resources
+
 [ ] Add cache key as functions
 [ ] In splitted resources store only id instead of full key
 
