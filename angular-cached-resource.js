@@ -8,7 +8,7 @@ angular.module('cResource', ['ngResource'])
       ttl: 864000,
       actions: {
         'get':    {method:'GET', $cache:true},
-        'query':  {method:'GET', $cache:{key:true}, isArray:true},
+        'query':  {method:'GET', $cache:{key:true, split: {'': true}}, isArray:true},
       }
     };
 
@@ -287,13 +287,28 @@ angular.module('cResource', ['ngResource'])
         splitResource: function (resource) {
           var self = this;
           angular.forEach(this.splitProperties.sort().reverse(), function(propertyPath) {
-            if (!helper.isValidDottedPath(propertyPath)) {
-              throw angular.$$minErr('badmember', 'Dotted member path "@{0}" is invalid.', propertyPath);
+            var engine, parts;
+            if (propertyPath === '') {
+              if (!angular.isArray(resource)) {
+                throw angular.$$minErr('$cResource')('badmember', 'Empty split on non array resource is is invalid.');
+              }
+
+              engine = new Engine(self.template, self.defaultParams, self.splitConfigs[propertyPath]);
+              parts = angular.copy(resource);
+              resource.length = 0;
+              angular.forEach(parts, function(part) {
+                resource.push('#' + engine.store(part, {}, part));
+              });
+              return;
             }
 
-            var engine = new Engine(self.template, {}, self.splitConfigs[propertyPath]);
+            if (!helper.isValidDottedPath(propertyPath)) {
+              throw angular.$$minErr('$cResource')('badmember', 'Dotted member path "@{0}" is invalid.', propertyPath);
+            }
+
+            engine = new Engine(self.template, {}, self.splitConfigs[propertyPath]);
             var keys = propertyPath.split('.');
-            var parts = [resource];
+            parts = angular.isArray(resource) ? resource: [resource];
             angular.forEach(keys, function(key, index) {
               var last = (index === keys.length - 1);
               var newParts = [];
@@ -338,11 +353,11 @@ angular.module('cResource', ['ngResource'])
         }
       };
 
-      var simpleCacheWrapper = function(call, url, action, cacheSettings) {
+      var simpleCacheWrapper = function(call, url, paramDefaults, action, cacheSettings) {
         Helper.prototype.hasBody = function() {
           return /^(POST|PUT|PATCH)$/i.test(action.method);
         };
-        var engine = new Engine(action.url || url, action.params, cacheSettings);
+        var engine = new Engine(action.url || url, angular.extend({}, paramDefaults, action.params), cacheSettings);
 
         return function () {
           var response = call.apply(this, arguments);
@@ -365,7 +380,7 @@ angular.module('cResource', ['ngResource'])
 
         angular.forEach(actions, function(action, name) {
           if (angular.isDefined(action.$cache) && action.$cache !== false) {
-            resource[name] = simpleCacheWrapper(resource[name], url, action, action.$cache);
+            resource[name] = simpleCacheWrapper(resource[name], url, paramDefaults, action, action.$cache);
           }
         });
 
