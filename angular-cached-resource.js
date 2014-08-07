@@ -332,11 +332,15 @@ angular.module('cResource', ['ngResource'])
 
           response.$promise.then(function(items) {
             var resourcesReference = [];
+            items = angular.copy(items);
+            response.length = 0;
             angular.forEach(items, function(item) {
               var splitKey = getSplitKey(arguments, item);
+              item = angular.extend(cache.get(splitKey), item);
               cache.put(splitKey, setMetadata(splitKey, item));
               resourcesReference.push(splitKey);
               item.$cache.stale = false;
+              response.push(item);
             });
 
             cache.put(mainKey, setMetadata(mainKey, resourcesReference));

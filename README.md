@@ -3,7 +3,7 @@
 ## TODO
 
 [X] Store date as integer
-[ ] Add an option to merge resource returned with cached responses
+[X] Merge splitted resource with original cache
 [ ] Split everything
 [ ] Add cache key as functions
 [ ] In splitted resources store only id instead of full key
