@@ -14,7 +14,6 @@ angular.module('cResource', ['ngResource'])
 
     this.$get = function($resource, $window, $interval) {
       function Route() {
-        this.defaults = {};
       }
 
       Route.prototype = {
@@ -74,7 +73,7 @@ angular.module('cResource', ['ngResource'])
 
           params = params || {};
           angular.forEach(urlParams, function(_, urlParam){
-            val = params.hasOwnProperty(urlParam) ? params[urlParam] : self.defaults[urlParam];
+            val = params.hasOwnProperty(urlParam) ? params[urlParam] : undefined;
             if (angular.isDefined(val) && val !== null) {
               encodedVal = self.encodeUriSegment(val);
               url = url.replace(new RegExp(':' + urlParam + '(\\W|$)', 'g'), function(match, p1) {
@@ -241,10 +240,10 @@ angular.module('cResource', ['ngResource'])
       $interval(function() {cache.gc();}, 30000);
       cache.gc();
 
-      function Engine(template, defaultParams, cacheSettings) {
+      function Engine(template, paramDefaults, cacheSettings) {
         this.enabled = true;
         this.template = template;
-        this.defaultParams = defaultParams || {};
+        this.paramDefaults = paramDefaults || {};
         this.init(cacheSettings);
       }
 
@@ -269,7 +268,7 @@ angular.module('cResource', ['ngResource'])
           }
 
           if (angular.isDefined(cacheSettings.params)) {
-            angular.extend(this.defaultParams, cacheSettings.params);
+            angular.extend(this.paramDefaults, cacheSettings.params);
           }
 
           this.splitProperties = [];
@@ -280,7 +279,7 @@ angular.module('cResource', ['ngResource'])
           });
         },
         getKey: function(callParams, callData) {
-          var routeParams = angular.extend({}, helper.extractParams(callData, this.defaultParams || {}), callParams);
+          var routeParams = angular.extend({}, helper.extractParams(callData, this.paramDefaults), callParams);
 
           return route.generateUrl(this.template, routeParams);
         },
@@ -293,7 +292,7 @@ angular.module('cResource', ['ngResource'])
                 throw angular.$$minErr('$cResource')('badmember', 'Empty split on non array resource is is invalid.');
               }
 
-              engine = new Engine(self.template, self.defaultParams, self.splitConfigs[propertyPath]);
+              engine = new Engine(self.template, self.paramDefaults, self.splitConfigs[propertyPath]);
               parts = angular.copy(resource);
               resource.length = 0;
               angular.forEach(parts, function(part) {
