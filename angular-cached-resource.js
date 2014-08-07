@@ -109,14 +109,14 @@ angular.module('cResource', ['ngResource'])
 
       Cache.prototype = {
         put: function(key, value) {
-          var o = {
-            m: value.$cacheMetadata,
-            v: angular.copy(value)
-          };
-          delete o.v.$promise;
-          delete o.v.$resolved;
-          delete o.v.$cacheMetadata;
-          delete o.m.stale;
+          var o = [
+            value.$cache.created,
+            value.$cache.updated,
+            angular.copy(value)
+          ];
+          delete o[2].$promise;
+          delete o[2].$resolved;
+          delete o[2].$cache;
 
           var encoded = JSON.stringify(o);
           if (encoded  === undefined) {
@@ -131,8 +131,8 @@ angular.module('cResource', ['ngResource'])
             return undefined;
           }
           var s = JSON.parse(data);
-          var value = s.v;
-          value.$cacheMetadata = s.m;
+          var value = s[2];
+          value.$cache = {created: s[0], updated: s[1]};
           return value;
         },
         gc: function() {
@@ -141,8 +141,8 @@ angular.module('cResource', ['ngResource'])
           angular.forEach($window.localStorage, function(data, index) {
             if (data !== undefined && data !== 'undefined') {
               var s = JSON.parse(data);
-              if (angular.isObject(s) && s.m && s.m.updated) {
-                if (new Date(s.m.updated).getTime() + self.ttl < now) {
+              if (angular.isArray(s) && s.length > 1) {
+                if (s[1] + self.ttl < now) {
                   delete $window.localStorage[index];
                 }
               }
@@ -245,9 +245,9 @@ angular.module('cResource', ['ngResource'])
 
       var setMetadata = function(key, value) {
         var stored = cache.get(key);
-        value.$cacheMetadata = stored && stored.$cacheMetadata || {created: new Date()};
-        value.$cacheMetadata.updated = new Date();
-        value.$cacheMetadata.stale = true;
+        value.$cache = stored && stored.$cache || {created: new Date().getTime()};
+        value.$cache.updated = new Date().getTime();
+        value.$cache.stale = true;
 
         return value;
       };
@@ -277,10 +277,10 @@ angular.module('cResource', ['ngResource'])
           angular.extend(response, cache.get(key));
           setMetadata(key, response);
 
-          response.$promise.then(function(item) {
-            cache.put(key, setMetadata(key, item));
+          response.$promise.then(function() {
             setMetadata(key, response);
-            response.$cacheMetadata.stale = false;
+            cache.put(key, response);
+            response.$cache.stale = false;
           });
 
           return response;
@@ -336,12 +336,13 @@ angular.module('cResource', ['ngResource'])
               var splitKey = getSplitKey(arguments, item);
               cache.put(splitKey, setMetadata(splitKey, item));
               resourcesReference.push(splitKey);
+              item.$cache.stale = false;
             });
 
             cache.put(mainKey, setMetadata(mainKey, resourcesReference));
 
             setMetadata(mainKey, response);
-            response.$cacheMetadata.stale = false;
+            response.$cache.stale = false;
           });
 
           return response;

@@ -1,5 +1,13 @@
 # bower-angular-cached-resource
 
+## TODO
+
+[X] Store date as integer
+[ ] Add an option to merge resource returned with cached responses
+[ ] Split everything
+[ ] Add cache key as functions
+[ ] In splitted resources store only id instead of full key
+
 ## Description
 
 Angular cached resource is a wrapped for [Angular ngResouce](https://github.com/angular/angular.js/tree/master/src/ngResource).
@@ -82,7 +90,7 @@ Example:
 
 ```
 
-The response returned by angular cache resource contains a `$cacheMetadata` property. This proerty is an object with:
+The response returned by angular cache resource contains a `$cache` property. This proerty is an object with:
 
 - created: Date where the resource where stored in cache for the first time
 - created: Date where the resource where stored in cache for the last time
@@ -98,7 +106,7 @@ The `stale` sub-property let you define a custom class to informe the users, tha
   }
   </style>
   ...
-  <div ng-class="{stale: resource.$cacheMetadata.stale}">{{ resource }}</div>
+  <div ng-class="{stale: resource.$cache.stale}">{{ resource }}</div>
 
 ```
 
