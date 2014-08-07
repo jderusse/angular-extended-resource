@@ -14,6 +14,7 @@ angular.module('cResource', ['ngResource'])
 
     this.$get = function($resource, $window, $interval) {
       function Route() {
+        this.defaults = {};
       }
 
       Route.prototype = {
@@ -154,12 +155,13 @@ angular.module('cResource', ['ngResource'])
 
       Helper.prototype = {
         extractParams: function(data, actionParams, paramDefaults) {
+          var self = this;
           var ids = {};
           actionParams = angular.extend({}, paramDefaults, actionParams);
           angular.forEach(actionParams, function(value, key){
             if (angular.isFunction(value)) { value = value(); }
             ids[key] = value && value.charAt && value.charAt(0) === '@' ?
-              this.lookupDottedPath(data, value.substr(1)) : value;
+              self.lookupDottedPath(data, value.substr(1)) : value;
           });
           return ids;
         },
@@ -242,7 +244,7 @@ angular.module('cResource', ['ngResource'])
       function Engine(template, defaultParams, cacheSettings) {
         this.enabled = true;
         this.template = template;
-        this.defaultParams = defaultParams;
+        this.defaultParams = defaultParams || {};
         this.init(cacheSettings);
       }
 
@@ -266,6 +268,10 @@ angular.module('cResource', ['ngResource'])
             throw angular.$$minErr('$cResource')('badmember', 'cacheSplit property must be an object.');
           }
 
+          if (angular.isDefined(cacheSettings.params)) {
+            angular.extend(this.defaultParams, cacheSettings.params);
+          }
+
           this.splitProperties = [];
           this.splitConfigs = cacheSettings.split || {};
           var self = this;
@@ -274,7 +280,7 @@ angular.module('cResource', ['ngResource'])
           });
         },
         getKey: function(callParams, callData) {
-          var routeParams = angular.extend({}, callData, helper.extractParams(callData, this.defaultParams || {}), callParams);
+          var routeParams = angular.extend({}, helper.extractParams(callData, this.defaultParams || {}), callParams);
 
           return route.generateUrl(this.template, routeParams);
         },
@@ -285,34 +291,35 @@ angular.module('cResource', ['ngResource'])
               throw angular.$$minErr('badmember', 'Dotted member path "@{0}" is invalid.', propertyPath);
             }
 
-            var engine = new Engine(undefined, {}, self.splitConfigs[propertyPath]);
+            var engine = new Engine(self.template, {}, self.splitConfigs[propertyPath]);
             var keys = propertyPath.split('.');
-            var subItems = [resource];
+            var parts = [resource];
             angular.forEach(keys, function(key, index) {
               var last = (index === keys.length - 1);
-              var newSubItems = [];
-              angular.forEach(subItems, function(subItem) {
-                if (angular.isDefined(subItem[key])) {
-                  if (angular.isArray(subItem[key])) {
-                    newSubItems = newSubItems.concat(subItem[key]);
+              var newParts = [];
+              angular.forEach(parts, function(part) {
+                var item = part[key];
+                if (angular.isDefined(item)) {
+                  if (angular.isArray(item)) {
+                    newParts = newParts.concat(item);
                     if (last) {
                       var cacheKeys = [];
-                      angular.forEach(subItem[key], function(subItem) {
+                      angular.forEach(item, function(subItem) {
                         cacheKeys.push('#' + engine.store(subItem, {}, subItem));
                       });
-                      subItem[key] = cacheKeys;
+                      part[key] = cacheKeys;
                     }
                   } else {
-                    newSubItems.push(subItem[key]);
+                    newParts.push(item);
                     if (last) {
-                      var cacheKey = engine.store(subItem[key], {}, subItem[key]);
-                      subItem[key] = '#' + cacheKey;
+                      var cacheKey = engine.store(item, {}, part[key]);
+                      part[key] = '#' + cacheKey;
                     }
                   }
 
                 }
               });
-              subItems = newSubItems;
+              parts = newParts;
             });
           });
         },
