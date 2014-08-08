@@ -9,7 +9,7 @@
     [X] Add metadata on splitted resources
     [X] Restore splitted resource
     [X] Add option to customize params on cache (id: @id) (on parent or on split)
-    [ ] Prefix cache keys
+    [X] Prefix cache keys
     [ ] Keep parents references to generate cacheKey for splitted sub resources
     [X] Handler split of isArray resources (root is an array)
 [ ] Cache (in memory) calculs made on route (parse url, etc...)
@@ -206,6 +206,26 @@ this example is equals to
     });
   })
 ```
+
+You're able to define a global prefix to the storageKey or change the ttl with the $cResourceConfig service
+
+```javascript
+angular.module('app', ['cResource'])
+  .run(function($cResourceConfig) {
+    $cResourceConfig.prefix = 'u/';
+    $cResourceConfig.ttl = 24 * 3600 * 1000; // 24 hours
+  })
+```
+
+Because $cResouce is a provider, you can change the default action's behaviours
+
+```javascript
+angular.module('app', ['cResource'])
+  .config(function($cResourceProvider) {
+    $cResourceProvider.defaults.actions.query.$cache = false;
+  })
+```
+
 
 ## License
 

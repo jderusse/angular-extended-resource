@@ -1,18 +1,23 @@
 'use strict';
 
 angular.module('cResource', ['ngResource'])
+  .value('$cResourceConfig', function() {
+    return {
+      prefix: '',
+      ttl: 864000,
+    };
+  })
   .provider('$cResource', function() {
     var provider = this;
 
     this.defaults = {
-      ttl: 864000,
       actions: {
         'get':    {method:'GET', $cache:true},
         'query':  {method:'GET', $cache:{key:true, split: {'': true}}, isArray:true},
       }
     };
 
-    this.$get = function($resource, $window, $interval) {
+    this.$get = ['$window', '$interval', '$resource', '$cResourceConfig', function($window, $interval, $resource, $cResourceConfig) {
       function Route() {
       }
 
@@ -236,7 +241,7 @@ angular.module('cResource', ['ngResource'])
 
       var helper = new Helper();
       var route = new Route();
-      var cache = new Cache(provider.defaults.ttl);
+      var cache = new Cache($cResourceConfig.ttl);
       $interval(function() {cache.gc();}, 30000);
       cache.gc();
 
@@ -281,7 +286,7 @@ angular.module('cResource', ['ngResource'])
         getKey: function(callParams, callData) {
           var routeParams = angular.extend({}, helper.extractParams(callData, this.paramDefaults), callParams);
 
-          return route.generateUrl(this.template, routeParams);
+          return $cResourceConfig.prefix + route.generateUrl(this.template, routeParams);
         },
         splitRoot: function (resource) {
           if (!angular.isArray(resource)) {
@@ -473,5 +478,5 @@ angular.module('cResource', ['ngResource'])
 
         return resource;
       };
-    };
+    }];
   });
