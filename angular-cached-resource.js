@@ -107,14 +107,14 @@ angular.module('cResource', ['ngResource'])
 
       Cache.prototype = {
         put: function(key, value) {
-          value.$cache = value.$cache || {};
+          value = angular.copy(value);
+          delete value.$promise;
+          delete value.$resolved;
+          delete value.$cache;
           var o = [
-            value.$cache.updated,
-            angular.copy(value)
+            new Date().getTime(),
+            value
           ];
-          delete o[1].$promise;
-          delete o[1].$resolved;
-          delete o[1].$cache;
 
           var encoded = JSON.stringify(o);
           if (encoded  === undefined) {
@@ -365,7 +365,8 @@ angular.module('cResource', ['ngResource'])
 
           var parsedArguments = helper.parseArguments.apply(helper, arguments);
           response.$promise.then(function() {
-            angular.extend(response, {$cache:{updated: new Date().getTime(), stale: false}});
+            response.$cache = response.$cache || {updated: new Date().getTime()};
+            response.$cache.stale = false;
             engine.store(response, parsedArguments.params, parsedArguments.data);
           });
 

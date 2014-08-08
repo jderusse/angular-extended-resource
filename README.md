@@ -6,11 +6,12 @@
 [X] Merge splitted resource with original cache
 [ ] Split everything
     [X] Split resource on storage
+    [X] Add metadata on splitted resources
     [ ] Restore splitted resource
     [X] Add option to customize params on cache (id: @id) (on parent or on split)
+    [ ] Prefix cache keys
     [ ] Keep parents references to generate cacheKey for splitted sub resources
     [X] Handler split of isArray resources (root is an array)
-    [ ] Add metadata on splitted resources
 [ ] Cache (in memory) calculs made on route (parse url, etc...)
 [ ] Add cache key as functions
 
