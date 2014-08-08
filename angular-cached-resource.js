@@ -283,58 +283,62 @@ angular.module('cResource', ['ngResource'])
 
           return route.generateUrl(this.template, routeParams);
         },
+        splitRoot: function (resource) {
+          if (!angular.isArray(resource)) {
+            throw angular.$$minErr('$cResource')('badmember', 'Empty split on non array resource is is invalid.');
+          }
+
+          var engine = new Engine(this.template, this.paramDefaults, this.splitConfigs['']);
+          var parts = angular.copy(resource);
+          resource.length = 0;
+          angular.forEach(parts, function(part) {
+            resource.push('#' + engine.store(part, {}, part));
+          });
+        },
+        splitNode: function(resource, propertyPath) {
+          if (!helper.isValidDottedPath(propertyPath)) {
+            throw angular.$$minErr('$cResource')('badmember', 'Dotted member path "@{0}" is invalid.', propertyPath);
+          }
+
+          var engine = new Engine(this.template, {}, this.splitConfigs[propertyPath]);
+          var keys = propertyPath.split('.');
+          var parts = angular.isArray(resource) ? resource: [resource];
+          angular.forEach(keys, function(key, index) {
+            var last = (index === keys.length - 1);
+            var newParts = [];
+            angular.forEach(parts, function(part) {
+              var item = part[key];
+              if (angular.isDefined(item)) {
+                if (angular.isArray(item)) {
+                  newParts = newParts.concat(item);
+                  if (last) {
+                    var cacheKeys = [];
+                    angular.forEach(item, function(subItem) {
+                      cacheKeys.push('#' + engine.store(subItem, {}, subItem));
+                    });
+                    part[key] = cacheKeys;
+                  }
+                } else {
+                  newParts.push(item);
+                  if (last) {
+                    var cacheKey = engine.store(item, {}, part[key]);
+                    part[key] = '#' + cacheKey;
+                  }
+                }
+
+              }
+            });
+            parts = newParts;
+          });
+        },
         splitResource: function (resource) {
           var self = this;
           angular.forEach(this.splitProperties.sort().reverse(), function(propertyPath) {
-            var engine, parts;
             if (propertyPath === '') {
-              if (!angular.isArray(resource)) {
-                throw angular.$$minErr('$cResource')('badmember', 'Empty split on non array resource is is invalid.');
-              }
-
-              engine = new Engine(self.template, self.paramDefaults, self.splitConfigs[propertyPath]);
-              parts = angular.copy(resource);
-              resource.length = 0;
-              angular.forEach(parts, function(part) {
-                resource.push('#' + engine.store(part, {}, part));
-              });
-              return;
+              return self.splitRoot(resource);
+            } else {
+              return self.splitNode(resource, propertyPath);
             }
-
-            if (!helper.isValidDottedPath(propertyPath)) {
-              throw angular.$$minErr('$cResource')('badmember', 'Dotted member path "@{0}" is invalid.', propertyPath);
-            }
-
-            engine = new Engine(self.template, {}, self.splitConfigs[propertyPath]);
-            var keys = propertyPath.split('.');
-            parts = angular.isArray(resource) ? resource: [resource];
-            angular.forEach(keys, function(key, index) {
-              var last = (index === keys.length - 1);
-              var newParts = [];
-              angular.forEach(parts, function(part) {
-                var item = part[key];
-                if (angular.isDefined(item)) {
-                  if (angular.isArray(item)) {
-                    newParts = newParts.concat(item);
-                    if (last) {
-                      var cacheKeys = [];
-                      angular.forEach(item, function(subItem) {
-                        cacheKeys.push('#' + engine.store(subItem, {}, subItem));
-                      });
-                      part[key] = cacheKeys;
-                    }
-                  } else {
-                    newParts.push(item);
-                    if (last) {
-                      var cacheKey = engine.store(item, {}, part[key]);
-                      part[key] = '#' + cacheKey;
-                    }
-                  }
-
-                }
-              });
-              parts = newParts;
-            });
           });
         },
         store: function (resource, callParams, callData) {
