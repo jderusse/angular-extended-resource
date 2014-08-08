@@ -308,24 +308,23 @@ angular.module('cResource', ['ngResource'])
             var newParts = [];
             angular.forEach(parts, function(part) {
               var item = part[key];
-              if (angular.isDefined(item)) {
-                if (angular.isArray(item)) {
+              if (angular.isArray(item)) {
+                if (last) {
+                  var cacheKeys = [];
+                  angular.forEach(item, function(subItem) {
+                    cacheKeys.push('#' + engine.store(subItem, {}, subItem));
+                  });
+                  part[key] = cacheKeys;
+                } else {
                   newParts = newParts.concat(item);
-                  if (last) {
-                    var cacheKeys = [];
-                    angular.forEach(item, function(subItem) {
-                      cacheKeys.push('#' + engine.store(subItem, {}, subItem));
-                    });
-                    part[key] = cacheKeys;
-                  }
+                }
+              } else if (angular.isDefined(item)) {
+                if (last) {
+                  var cacheKey = engine.store(item, {}, part[key]);
+                  part[key] = '#' + cacheKey;
                 } else {
                   newParts.push(item);
-                  if (last) {
-                    var cacheKey = engine.store(item, {}, part[key]);
-                    part[key] = '#' + cacheKey;
-                  }
                 }
-
               }
             });
             parts = newParts;
@@ -353,6 +352,86 @@ angular.module('cResource', ['ngResource'])
           cache.put(key, resource);
 
           return key;
+        },
+        joinRoot: function (resource) {
+          if (!angular.isArray(resource)) {
+            throw angular.$$minErr('$cResource')('badmember', 'Empty join on non array resource is is invalid.');
+          }
+
+          var parts = angular.copy(resource);
+          resource.length = 0;
+          angular.forEach(parts, function(reference) {
+            if (reference[0] === '#') {
+              resource.push(cache.get(reference.substr(1)));
+            } else {
+              resource.push(reference);
+            }
+          });
+        },
+        joinNode: function(resource, propertyPath) {
+          if (!helper.isValidDottedPath(propertyPath)) {
+            throw angular.$$minErr('$cResource')('badmember', 'Dotted member path "@{0}" is invalid.', propertyPath);
+          }
+
+          var keys = propertyPath.split('.');
+          var parts = angular.isArray(resource) ? resource: [resource];
+          angular.forEach(keys, function(key, index) {
+            var last = (index === keys.length - 1);
+            var newParts = [];
+            angular.forEach(parts, function(part) {
+              var item = part[key];
+              if (angular.isArray(item)) {
+                if (last) {
+                  var items = angular.copy(item);
+                  item.length = 0;
+                  angular.forEach(items, function(reference) {
+                    if (reference[0] === '#') {
+                      item.push(cache.get(reference.substr(1)));
+                    } else {
+                      item.push(reference);
+                    }
+                  });
+                } else {
+                  newParts = newParts.concat(item);
+                }
+              } else if (angular.isDefined(item)) {
+                if (last) {
+                  if (item[0] === '#') {
+                    part[key] = cache.get(item.substr(1));
+                  }
+                } else {
+                  newParts.push(item);
+                }
+              }
+            });
+            parts = newParts;
+          });
+        },
+        joinResource: function (resource) {
+          var self = this;
+          angular.forEach(this.splitProperties.sort(), function(propertyPath) {
+            if (propertyPath === '') {
+              return self.joinRoot(resource);
+            } else {
+              return self.joinNode(resource, propertyPath);
+            }
+          });
+        },
+        fetch: function(callParams, callData) {
+          if (!this.enabled) {
+            return;
+          }
+
+          var key = this.getKey(callParams, callData);
+          var resource = cache.get(key);
+
+          if (!angular.isDefined(resource)) {
+            return resource;
+          }
+
+          this.joinResource(resource);
+
+          return resource;
         }
       };
 
@@ -364,10 +443,14 @@ angular.module('cResource', ['ngResource'])
 
         return function () {
           var response = call.apply(this, arguments);
-          // todo: removed when implement engine.fetch ?
-          angular.extend(response, {$cache:{stale: true}});
-
           var parsedArguments = helper.parseArguments.apply(helper, arguments);
+
+          var stored = engine.fetch(parsedArguments.params, parsedArguments.data);
+          if (angular.isDefined(stored)) {
+            angular.extend(response, stored);
+            response.$cache = stored.$cache;
+          }
+
           response.$promise.then(function() {
             response.$cache = response.$cache || {updated: new Date().getTime()};
             response.$cache.stale = false;

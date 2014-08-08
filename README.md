@@ -7,7 +7,7 @@
 [ ] Split everything
     [X] Split resource on storage
     [X] Add metadata on splitted resources
-    [ ] Restore splitted resource
+    [X] Restore splitted resource
     [X] Add option to customize params on cache (id: @id) (on parent or on split)
     [ ] Prefix cache keys
     [ ] Keep parents references to generate cacheKey for splitted sub resources
