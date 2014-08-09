@@ -212,14 +212,22 @@ angular.module('cResource', ['ngResource'])
       }
 
       Helper.prototype = {
-        extractParams: function(data, actionParams, paramDefaults) {
+        extractParams: function(data, actionParams, removeLinks) {
+          if (removeLinks === undefined) {
+            removeLinks = true;
+          }
+
           var self = this;
           var ids = {};
-          actionParams = angular.extend({}, paramDefaults, actionParams);
+          actionParams = angular.extend({}, actionParams);
           angular.forEach(actionParams, function(value, key){
             if (angular.isFunction(value)) { value = value(); }
-            ids[key] = value && value.charAt && value.charAt(0) === '@' ?
-              self.pathExplorer.getElement(data, value.substr(1)) : value;
+            if (value && value.charAt && value.charAt(0) === '@') {
+              var linked = self.pathExplorer.getElement(data, value.substr(1));
+              ids[key] = linked === undefined && !removeLinks ? value : linked;
+            } else {
+              ids[key] = value;
+            }
           });
           return ids;
         },
@@ -322,21 +330,22 @@ angular.module('cResource', ['ngResource'])
             self.splitProperties.push(property);
           });
         },
-        getKey: function(callParams, callData) {
-          var routeParams = angular.extend({}, helper.extractParams(callData, this.paramDefaults), callParams);
-
+        getRouteParams: function(callParams, callData, removeLinks) {
+          return angular.extend({}, helper.extractParams(callData, this.paramDefaults, removeLinks), callParams);
+        },
+        getKey: function(routeParams) {
           return $cResourceConfig.prefix + route.generateUrl(this.template, routeParams);
         },
-        splitResource: function (resource) {
+        splitResource: function (resource, routeParams) {
           var self = this;
           angular.forEach(this.splitProperties.sort().reverse(), function(propertyPath) {
-            var engine = new Engine(self.template, self.paramDefaults, self.splitConfigs[propertyPath]);
+            var engine = new Engine(self.template + propertyPath, routeParams, self.splitConfigs[propertyPath]);
             pathExplorer.changeElement(resource, propertyPath, function(element) {
               return '#' + engine.store(element, {}, element);
             });
           });
         },
-        store: function (resource, callParams, callData) {
+        store: function (resource, callParams) {
           if (!this.enabled) {
             return;
           }
@@ -344,18 +353,22 @@ angular.module('cResource', ['ngResource'])
           resource = angular.copy(resource);
 
           if (this.splitProperties.length) {
-            this.splitResource(resource);
+            this.splitResource(resource, this.getRouteParams(callParams, resource, false));
           }
-          var key = this.getKey(callParams, callData);
+          var key = this.getKey(this.getRouteParams(callParams, resource));
           cache.put(key, resource);
 
           return key;
         },
         joinResource: function (resource) {
+          var self = this;
           angular.forEach(this.splitProperties.sort(), function(propertyPath) {
+            var engine = new Engine(null, {}, self.splitConfigs[propertyPath]);
             pathExplorer.changeElement(resource, propertyPath, function(element) {
               if (element[0] === '#') {
-                return cache.get(element.substr(1));
+                var restored = cache.get(element.substr(1));
+                engine.joinResource(restored);
+                return restored;
               } else {
                 return element;
               }
@@ -367,7 +380,7 @@ angular.module('cResource', ['ngResource'])
             return;
           }
 
-          var key = this.getKey(callParams, callData);
+          var key = this.getKey(this.getRouteParams(callParams, callData));
           var resource = cache.get(key);
 
           if (!angular.isDefined(resource)) {
@@ -401,7 +414,7 @@ angular.module('cResource', ['ngResource'])
           response.$promise.then(function() {
             response.$cache = response.$cache || {updated: new Date().getTime()};
             response.$cache.stale = false;
-            engine.store(response, parsedArguments.params, parsedArguments.data);
+            engine.store(response, parsedArguments.params);
           });
 
           return response;

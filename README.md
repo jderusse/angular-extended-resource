@@ -4,14 +4,14 @@
 
 [X] Store date as integer
 [X] Merge splitted resource with original cache
-[ ] Split everything
+[X] Split everything
     [X] Split resource on storage
     [X] Add metadata on splitted resources
     [X] Restore splitted resource
     [X] Add option to customize params on cache (id: @id) (on parent or on split)
     [X] Prefix cache keys
-    [ ] Keep parents references to generate cacheKey for splitted sub resources
     [X] Handler split of isArray resources (root is an array)
+[X] Keep parents references to generate cacheKey for splitted sub resources
 [ ] Cache (in memory) calculs made on route (parse url, etc...)
 [ ] Add cache key as functions
 
@@ -223,6 +223,73 @@ Because $cResouce is a provider, you can change the default action's behaviours
 angular.module('app', ['cResource'])
   .config(function($cResourceProvider) {
     $cResourceProvider.defaults.actions.query.$cache = false;
+  })
+```
+
+In split resources, you can use identifiers of parents to compose the key.
+
+```javascript
+  .factory('Customer', function($cResource) {
+    return $cResource('/api/customers/:id', {id: '@id'}, {
+      get: {method:'GET', $cache:{
+        key: 'customer/:customerId',
+        params: {customerId: '@id'}
+        split: {
+          'addresses': {
+            key: 'customer/:customerId/address/:addressId',
+            params: {'addressId': '@id'},
+          }
+        }
+      }},
+    });
+  })
+```
+
+If your resources and sub resources use the same property name as identifier (like `id` or `uuid`) don't forget to specify a different mapping name or specify a new params mapping. Otherwise, all your resources will be merged on the same storageKey
+
+```javascript
+  // bad
+  .factory('Customer', function($cResource) {
+    return $cResource('/api/customers/:id', {id: '@id'}, {
+      get: {method:'GET', $cache:{
+        key: 'customer/:id',
+        split: {
+          'addresses': {
+            key: 'address/:id', // :id is a reference Customer's `{id: '@id'}` defined near URL definition
+          }
+        }
+      }},
+    });
+  })
+
+  // good
+  .factory('Customer', function($cResource) {
+    return $cResource('/api/customers/:id', {id: '@id'}, {
+      get: {method:'GET', $cache:{
+        key: 'customer/:id',
+        split: {
+          'addresses': {
+            key: 'address/:id',  // :id is a reference Address's `{id: '@id'}` defined next line
+            params: {id; '@id'}
+          }
+        }
+      }},
+    });
+
+  // good
+  .factory('Customer', function($cResource) {
+    return $cResource('/api/customers/:id', {id: '@id'}, {
+      get: {method:'GET', $cache:{
+        key: 'customer/:customerId',
+        params: {customerId; '@id'}
+        split: {
+          'addresses': {
+            key: 'address/:addressId',
+            params: {addressId; '@id'}
+          }
+        }
+      }},
+    });
   })
 ```
 
