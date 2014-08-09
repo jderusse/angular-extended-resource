@@ -154,7 +154,61 @@ angular.module('cResource', ['ngResource'])
         }
       };
 
+      function PathExplorer() {
+      }
+
+      PathExplorer.prototype = {
+        MEMBER_NAME_REGEX: /^(\.[a-zA-Z_$][0-9a-zA-Z_$]*)+$/,
+        isValidDottedPath: function(path) {
+          return (path !== null && path !== '' && path !== 'hasOwnProperty' &&
+              this.MEMBER_NAME_REGEX.test('.' + path));
+        },
+        getElement: function(obj, path) {
+          if (!this.isValidDottedPath(path)) {
+            throw angular.$$minErr('badmember', 'Dotted member path "@{0}" is invalid.', path);
+          }
+          var keys = path.split('.');
+          for (var i = 0, ii = keys.length; i < ii && obj !== undefined; i++) {
+            var key = keys[i];
+            obj = (obj !== null) ? obj[key] : undefined;
+          }
+          return obj;
+        },
+        changeElement: function(object, path, callback) {
+          var self = this;
+          if (path === '') {
+            if (angular.isArray(object)) {
+              var objectCopy = angular.copy(object);
+              object.length = 0;
+              angular.forEach(objectCopy, function(element) {
+                object.push(callback(element));
+              });
+
+              return object;
+            } else {
+              return callback(object);
+            }
+          } else {
+            if (!this.isValidDottedPath(path)) {
+              throw angular.$$minErr('$cResource')('badmember', 'Dotted member path "@{0}" is invalid.', path);
+            }
+            var keys = path.split('.');
+            var key = keys.shift();
+            var subPath = keys.join('.');
+
+            angular.forEach(angular.isArray(object) ? object: [object], function(element) {
+              if (angular.isDefined(element[key])) {
+                element[key] = self.changeElement(element[key], subPath, callback);
+              }
+            });
+
+            return object;
+          }
+        }
+      };
+
       function Helper() {
+        this.pathExplorer = new PathExplorer();
       }
 
       Helper.prototype = {
@@ -165,25 +219,9 @@ angular.module('cResource', ['ngResource'])
           angular.forEach(actionParams, function(value, key){
             if (angular.isFunction(value)) { value = value(); }
             ids[key] = value && value.charAt && value.charAt(0) === '@' ?
-              self.lookupDottedPath(data, value.substr(1)) : value;
+              self.pathExplorer.getElement(data, value.substr(1)) : value;
           });
           return ids;
-        },
-        MEMBER_NAME_REGEX: /^(\.[a-zA-Z_$][0-9a-zA-Z_$]*)+$/,
-        isValidDottedPath: function(path) {
-          return (path !== null && path !== '' && path !== 'hasOwnProperty' &&
-              this.MEMBER_NAME_REGEX.test('.' + path));
-        },
-        lookupDottedPath: function(obj, path) {
-          if (!this.isValidDottedPath(path)) {
-            throw angular.$$minErr('badmember', 'Dotted member path "@{0}" is invalid.', path);
-          }
-          var keys = path.split('.');
-          for (var i = 0, ii = keys.length; i < ii && obj !== undefined; i++) {
-            var key = keys[i];
-            obj = (obj !== null) ? obj[key] : undefined;
-          }
-          return obj;
         },
         parseArguments: function(a1, a2, a3, a4) {
           var params = {}, data, success, error;
@@ -239,6 +277,7 @@ angular.module('cResource', ['ngResource'])
         }
       };
 
+      var pathExplorer = new PathExplorer();
       var helper = new Helper();
       var route = new Route();
       var cache = new Cache($cResourceConfig.ttl);
@@ -288,61 +327,13 @@ angular.module('cResource', ['ngResource'])
 
           return $cResourceConfig.prefix + route.generateUrl(this.template, routeParams);
         },
-        splitRoot: function (resource) {
-          if (!angular.isArray(resource)) {
-            throw angular.$$minErr('$cResource')('badmember', 'Empty split on non array resource is is invalid.');
-          }
-
-          var engine = new Engine(this.template, this.paramDefaults, this.splitConfigs['']);
-          var parts = angular.copy(resource);
-          resource.length = 0;
-          angular.forEach(parts, function(part) {
-            resource.push('#' + engine.store(part, {}, part));
-          });
-        },
-        splitNode: function(resource, propertyPath) {
-          if (!helper.isValidDottedPath(propertyPath)) {
-            throw angular.$$minErr('$cResource')('badmember', 'Dotted member path "@{0}" is invalid.', propertyPath);
-          }
-
-          var engine = new Engine(this.template, {}, this.splitConfigs[propertyPath]);
-          var keys = propertyPath.split('.');
-          var parts = angular.isArray(resource) ? resource: [resource];
-          angular.forEach(keys, function(key, index) {
-            var last = (index === keys.length - 1);
-            var newParts = [];
-            angular.forEach(parts, function(part) {
-              var item = part[key];
-              if (angular.isArray(item)) {
-                if (last) {
-                  var cacheKeys = [];
-                  angular.forEach(item, function(subItem) {
-                    cacheKeys.push('#' + engine.store(subItem, {}, subItem));
-                  });
-                  part[key] = cacheKeys;
-                } else {
-                  newParts = newParts.concat(item);
-                }
-              } else if (angular.isDefined(item)) {
-                if (last) {
-                  var cacheKey = engine.store(item, {}, part[key]);
-                  part[key] = '#' + cacheKey;
-                } else {
-                  newParts.push(item);
-                }
-              }
-            });
-            parts = newParts;
-          });
-        },
         splitResource: function (resource) {
           var self = this;
           angular.forEach(this.splitProperties.sort().reverse(), function(propertyPath) {
-            if (propertyPath === '') {
-              return self.splitRoot(resource);
-            } else {
-              return self.splitNode(resource, propertyPath);
-            }
+            var engine = new Engine(self.template, self.paramDefaults, self.splitConfigs[propertyPath]);
+            pathExplorer.changeElement(resource, propertyPath, function(element) {
+              return '#' + engine.store(element, {}, element);
+            });
           });
         },
         store: function (resource, callParams, callData) {
@@ -358,68 +349,15 @@ angular.module('cResource', ['ngResource'])
 
           return key;
         },
-        joinRoot: function (resource) {
-          if (!angular.isArray(resource)) {
-            throw angular.$$minErr('$cResource')('badmember', 'Empty join on non array resource is is invalid.');
-          }
-
-          var parts = angular.copy(resource);
-          resource.length = 0;
-          angular.forEach(parts, function(reference) {
-            if (reference[0] === '#') {
-              resource.push(cache.get(reference.substr(1)));
-            } else {
-              resource.push(reference);
-            }
-          });
-        },
-        joinNode: function(resource, propertyPath) {
-          if (!helper.isValidDottedPath(propertyPath)) {
-            throw angular.$$minErr('$cResource')('badmember', 'Dotted member path "@{0}" is invalid.', propertyPath);
-          }
-
-          var keys = propertyPath.split('.');
-          var parts = angular.isArray(resource) ? resource: [resource];
-          angular.forEach(keys, function(key, index) {
-            var last = (index === keys.length - 1);
-            var newParts = [];
-            angular.forEach(parts, function(part) {
-              var item = part[key];
-              if (angular.isArray(item)) {
-                if (last) {
-                  var items = angular.copy(item);
-                  item.length = 0;
-                  angular.forEach(items, function(reference) {
-                    if (reference[0] === '#') {
-                      item.push(cache.get(reference.substr(1)));
-                    } else {
-                      item.push(reference);
-                    }
-                  });
-                } else {
-                  newParts = newParts.concat(item);
-                }
-              } else if (angular.isDefined(item)) {
-                if (last) {
-                  if (item[0] === '#') {
-                    part[key] = cache.get(item.substr(1));
-                  }
-                } else {
-                  newParts.push(item);
-                }
+        joinResource: function (resource) {
+          angular.forEach(this.splitProperties.sort(), function(propertyPath) {
+            pathExplorer.changeElement(resource, propertyPath, function(element) {
+              if (element[0] === '#') {
+                return cache.get(element.substr(1));
+              } else {
+                return element;
               }
             });
-            parts = newParts;
-          });
-        },
-        joinResource: function (resource) {
-          var self = this;
-          angular.forEach(this.splitProperties.sort(), function(propertyPath) {
-            if (propertyPath === '') {
-              return self.joinRoot(resource);
-            } else {
-              return self.joinNode(resource, propertyPath);
-            }
           });
         },
         fetch: function(callParams, callData) {
