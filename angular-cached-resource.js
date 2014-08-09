@@ -18,10 +18,17 @@ angular.module('cResource', ['ngResource'])
     };
 
     this.$get = ['$window', '$interval', '$resource', '$cResourceConfig', function($window, $interval, $resource, $cResourceConfig) {
-      function Route() {
+      /**
+       * Manipulate template and placeHolder
+       *
+       * @see ngResource Route
+       */
+      function TemplateEngine() {
       }
 
       /**
+       * @see ngResource Route
+       *
        * We need our custom method because encodeURIComponent is too aggressive and doesn't follow
        * http://www.ietf.org/rfc/rfc3986.txt with regards to the character set (pchar) allowed in path
        * segments:
@@ -32,7 +39,7 @@ angular.module('cResource', ['ngResource'])
        *    sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
        *                     / "*" / "+" / "," / ";" / "="
        */
-      Route.prototype.encodeUriSegment = function encodeUriSegment(val) {
+      TemplateEngine.prototype.encodeUriSegment = function encodeUriSegment(val) {
         return this.encodeUriQuery(val, true).
           replace(/%26/gi, '&').
           replace(/%3D/gi, '=').
@@ -40,6 +47,8 @@ angular.module('cResource', ['ngResource'])
       };
 
       /**
+       * @see ngResource Route
+       *
        * This method is intended for encoding *key* or *value* parts of query component. We need a
        * custom method because encodeURIComponent is too aggressive and encodes stuff that doesn't
        * have to be encoded per http://tools.ietf.org/html/rfc3986:
@@ -50,7 +59,7 @@ angular.module('cResource', ['ngResource'])
        *    sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
        *                     / "*" / "+" / "," / ";" / "="
        */
-      Route.prototype.encodeUriQuery = function encodeUriQuery(val, pctEncodeSpaces) {
+      TemplateEngine.prototype.encodeUriQuery = function encodeUriQuery(val, pctEncodeSpaces) {
         return encodeURIComponent(val).
           replace(/%40/gi, '@').
           replace(/%3A/gi, ':').
@@ -59,7 +68,15 @@ angular.module('cResource', ['ngResource'])
           replace(/%20/g, (pctEncodeSpaces ? '%20' : '+'));
       };
 
-      Route.prototype.generateUrl = function generateUrl(template, params) {
+      /**
+       * Replace placeHolder from a template
+       *
+       * @param string template Template to render
+       * @param object params   List of params
+       *
+       * @return string
+       */
+      TemplateEngine.prototype.render = function render(template, params) {
         var _this = this,
             url = template,
             val,
@@ -106,10 +123,21 @@ angular.module('cResource', ['ngResource'])
         return url.replace(/\/\\\./, '/.');
       };
 
+      /**
+       * Store a retreives data from cache
+       *
+       * @param integer ttl Delays before purging data from cache
+       */
       function Cache(ttl) {
         this.ttl = ttl;
       }
 
+      /**
+       * Store a data into cache
+       *
+       * @param string key
+       * @param mixed  value
+       */
       Cache.prototype.put = function put(key, value) {
         value = angular.copy(value);
         delete value.$promise;
@@ -128,6 +156,11 @@ angular.module('cResource', ['ngResource'])
         }
       };
 
+      /**
+       * Retreives a data from cache
+       *
+       * @param string key
+       */
       Cache.prototype.get = function get(key) {
         var data = $window.localStorage[key];
         if (data === undefined || data === 'undefined') {
@@ -154,16 +187,34 @@ angular.module('cResource', ['ngResource'])
         });
       };
 
+      /**
+       * Provides tool for exploring an object
+       */
       function PathExplorer() {
       }
 
       PathExplorer.MEMBER_NAME_REGEX = /^(\.[a-zA-Z_$][0-9a-zA-Z_$]*)+$/;
 
+      /**
+       * Determine if the path is valid or not
+       *
+       * @param string path
+       *
+       * @return Boolean
+       */
       PathExplorer.prototype.isValidDottedPath = function isValidDottedPath(path) {
         return (path !== null && path !== '' && path !== 'hasOwnProperty' &&
             PathExplorer.MEMBER_NAME_REGEX.test('.' + path));
       };
 
+      /**
+       * Retreives an elements by the property path
+       *
+       * @param object obj Object to lookup
+       * @param string path
+       *
+       * @return mixed
+       */
       PathExplorer.prototype.getElement = function getElement(obj, path) {
         if (!this.isValidDottedPath(path)) {
           throw angular.$$minErr('badmember', 'Dotted member path "@{0}" is invalid.', path);
@@ -176,6 +227,15 @@ angular.module('cResource', ['ngResource'])
         return obj;
       };
 
+      /**
+       * Apply a callback to an element of an object
+       *
+       * @param mixed    object   Object to modify
+       * @param string   path     Path to the attributte to modify
+       * @param Function callback Function to apply to the object
+       *
+       * @return Edited object
+       */
       PathExplorer.prototype.changeElement = function changeElement(object, path, callback) {
         var _this = this;
         if (path === '') {
@@ -208,6 +268,13 @@ angular.module('cResource', ['ngResource'])
         }
       };
 
+      /**
+       * Resource cachen engine
+       *
+       * @param string template      Default cacheKey template
+       * @param object paramDefaults Default cacheKey placeholders
+       * @param object cacheSettings Cache settings
+       */
       function Engine(template, paramDefaults, cacheSettings) {
         this.enabled = true;
         this.template = template;
@@ -215,6 +282,11 @@ angular.module('cResource', ['ngResource'])
         this.init(cacheSettings);
       }
 
+      /**
+       * Initialize the engine
+       *
+       * @param object cacheSettings
+       */
       Engine.prototype.init = function init(cacheSettings) {
         if (!angular.isObject(cacheSettings)) {
           return this.init({key: cacheSettings});
@@ -246,14 +318,23 @@ angular.module('cResource', ['ngResource'])
         });
       };
 
-      Engine.prototype.extractParams = function extractParams(data, actionParams, removeLinks) {
+      /**
+       * Extracts params from an object
+       *
+       * @param object  data        Object containing data
+       * @param object  params      List of parameters to extract
+       * @param boolean removeLinks If true, links ('@id') without correspondaces, will be let as it ('@id').Otherwise, the params will contains undefined
+       *
+       * @return object
+       */
+      Engine.prototype.extractParams = function extractParams(data, params, removeLinks) {
         if (removeLinks === undefined) {
           removeLinks = true;
         }
 
         var ids = {};
-        actionParams = angular.extend({}, actionParams);
-        angular.forEach(actionParams, function(value, key){
+        params = angular.extend({}, params);
+        angular.forEach(params, function(value, key){
           if (angular.isFunction(value)) { value = value(); }
           if (value && value.charAt && value.charAt(0) === '@') {
             var linked = pathExplorer.getElement(data, value.substr(1));
@@ -265,24 +346,51 @@ angular.module('cResource', ['ngResource'])
         return ids;
       };
 
-      Engine.prototype.getRouteParams = function getRouteParams(callParams, callData, removeLinks) {
+      /**
+       * Retreive list of params for template
+       *
+       * @param object  callParams  List of parameters passed in original resource's call
+       * @param object  callData    Data passed in original resource's call
+       * @param boolean removeLinks @see extractParams
+       * @return object
+       */
+      Engine.prototype.getTemplateParams = function getTemplateParams(callParams, callData, removeLinks) {
         return angular.extend({}, this.extractParams(callData, this.paramDefaults, removeLinks), callParams);
       };
 
-      Engine.prototype.getKey = function getKey(routeParams) {
-        return $cResourceConfig.prefix + route.generateUrl(this.template, routeParams);
+      /**
+       * Retreives the cache key
+       *
+       * @param object templateParams List of parameters to apply in template
+       *
+       * @return string
+       */
+      Engine.prototype.getKey = function getKey(templateParams) {
+        return $cResourceConfig.prefix + templateEngine.render(this.template, templateParams);
       };
 
-      Engine.prototype.splitResource = function splitResource(resource, routeParams) {
+      /**
+       * Split a resource
+       *
+       * @param object resource       Resource to split
+       * @param object templateParams List of resource's templateParams
+       */
+      Engine.prototype.splitResource = function splitResource(resource, templateParams) {
         var _this = this;
         angular.forEach(this.splitProperties.sort().reverse(), function(propertyPath) {
-          var engine = new Engine(_this.template + propertyPath, routeParams, _this.splitConfigs[propertyPath]);
+          var engine = new Engine(_this.template + propertyPath, templateParams, _this.splitConfigs[propertyPath]);
           pathExplorer.changeElement(resource, propertyPath, function(element) {
             return '#' + engine.store(element, {}, element);
           });
         });
       };
 
+      /**
+       * Store a resource in cache
+       *
+       * @param object resource   Ressource to store
+       * @param object callParams List of parameters passed in original resource's
+       */
       Engine.prototype.store = function store(resource, callParams) {
         if (!this.enabled) {
           return;
@@ -291,14 +399,19 @@ angular.module('cResource', ['ngResource'])
         resource = angular.copy(resource);
 
         if (this.splitProperties.length) {
-          this.splitResource(resource, this.getRouteParams(callParams, resource, false));
+          this.splitResource(resource, this.getTemplateParams(callParams, resource, false));
         }
-        var key = this.getKey(this.getRouteParams(callParams, resource));
+        var key = this.getKey(this.getTemplateParams(callParams, resource));
         cache.put(key, resource);
 
         return key;
       };
 
+      /**
+       * Join a splitted resource
+       *
+       * @param object resource Ressource to join
+       */
       Engine.prototype.joinResource = function joinResource(resource) {
         var _this = this;
         angular.forEach(this.splitProperties.sort(), function(propertyPath) {
@@ -315,12 +428,20 @@ angular.module('cResource', ['ngResource'])
         });
       };
 
+      /**
+       * Retreive a ressource from cache
+       *
+       * @param object callParams List of parameters passed in original resource's call
+       * @param object callData   Data passed in original resource's call
+       *
+       * @return mixed
+       */
       Engine.prototype.fetch = function fetch(callParams, callData) {
         if (!this.enabled) {
           return;
         }
 
-        var key = this.getKey(this.getRouteParams(callParams, callData)),
+        var key = this.getKey(this.getTemplateParams(callParams, callData)),
             resource = cache.get(key);
 
         if (!angular.isDefined(resource)) {
@@ -335,7 +456,7 @@ angular.module('cResource', ['ngResource'])
       };
 
       var pathExplorer = new PathExplorer(),
-          route = new Route(),
+          templateEngine = new TemplateEngine(),
           cache = new Cache($cResourceConfig.ttl);
 
       $interval(function() {cache.gc();}, 30000);
@@ -346,6 +467,9 @@ angular.module('cResource', ['ngResource'])
           return /^(POST|PUT|PATCH)$/i.test(action.method);
         };
 
+        /**
+         * Parse call's arguments to determine which is params, data, success and error
+         */
         var parseArguments = function parseArguments(a1, a2, a3, a4) {
           var params = {}, data, success, error;
           /* jshint -W086 */ /* (purposefully fall through case statements) */
