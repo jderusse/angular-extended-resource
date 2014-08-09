@@ -343,7 +343,9 @@ angular.module('cResource', ['ngResource'])
 
           resource = angular.copy(resource);
 
-          this.splitResource(resource);
+          if (this.splitProperties.length) {
+            this.splitResource(resource);
+          }
           var key = this.getKey(callParams, callData);
           cache.put(key, resource);
 
@@ -372,7 +374,9 @@ angular.module('cResource', ['ngResource'])
             return resource;
           }
 
-          this.joinResource(resource);
+          if (this.splitProperties.length) {
+            this.joinResource(resource);
+          }
 
           return resource;
         }
