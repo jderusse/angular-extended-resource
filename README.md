@@ -12,7 +12,7 @@
     - [x] Prefix cache keys
     - [x] Handler split of isArray resources (root is an array)
 - [x] Keep parents references to generate cacheKey for split sub resources
-- [ ] Cache (in memory) calculs made on route (parse url, etc...)
+- [x] Cache (in memory) calculs made on route (parse url, etc...)
 - [ ] Add cache key as functions
 
 ## Description

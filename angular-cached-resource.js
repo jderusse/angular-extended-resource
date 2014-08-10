@@ -24,6 +24,7 @@ angular.module('cResource', ['ngResource'])
        * @see ngResource Route
        */
       function TemplateEngine() {
+        this._parsed = {};
       }
 
       /**
@@ -68,6 +69,37 @@ angular.module('cResource', ['ngResource'])
           replace(/%20/g, (pctEncodeSpaces ? '%20' : '+'));
       };
 
+
+      /**
+       * Parse an template by extracting urlParams
+       *
+       * @param string template
+       *
+       * @return object
+       */
+      TemplateEngine.prototype.extractParams = function extractParams(template) {
+        if (!this._parsed[template]) {
+          var url = template,
+              urlParams = {};
+
+
+          angular.forEach(url.split(/\W/), function(param){
+            if (param === 'hasOwnProperty') {
+              throw angular.$$minErr('$cResource')('badname', 'hasOwnProperty is not a valid parameter name.');
+            }
+
+            var paramRegExp = new RegExp('(^|[^\\\\]):' + param + '(\\W|$)', 'g');
+            if (param && !(/^\\d+$/.test(param)) && (paramRegExp.test(url))) {
+              urlParams[param] = paramRegExp;
+            }
+          });
+
+          this._parsed[template] = urlParams;
+        }
+
+        return this._parsed[template];
+      };
+
       /**
        * Replace placeHolder from a template
        *
@@ -77,50 +109,34 @@ angular.module('cResource', ['ngResource'])
        * @return string
        */
       TemplateEngine.prototype.render = function render(template, params) {
-        var _this = this,
-            url = template,
-            val,
-            encodedVal;
-
-        var urlParams = {};
-        angular.forEach(url.split(/\W/), function(param){
-          if (param === 'hasOwnProperty') {
-            throw angular.$$minErr('$cResource')('badname', 'hasOwnProperty is not a valid parameter name.');
-          }
-          if (!(/^\\d+$/.test(param)) && param &&
-               (new RegExp('(^|[^\\\\]):' + param + '(\\W|$)').test(url))) {
-            urlParams[param] = true;
-          }
-        });
-        url = url.replace(/\\:/g, ':');
+        var _this = this;
+        var url = template;
+        var urlParams = this.extractParams(template);
 
         params = params || {};
-        angular.forEach(urlParams, function(_, urlParam){
-          val = params.hasOwnProperty(urlParam) ? params[urlParam] : undefined;
+        angular.forEach(urlParams, function(regExp, urlParam){
+          var val = params.hasOwnProperty(urlParam) ? params[urlParam] : undefined,
+              encodedVal;
+
           if (angular.isDefined(val) && val !== null) {
             encodedVal = _this.encodeUriSegment(val);
-            url = url.replace(new RegExp(':' + urlParam + '(\\W|$)', 'g'), function(match, p1) {
-              return encodedVal + p1;
+            url = url.replace(regExp, function(_, head, tail) {
+              return head + encodedVal + tail;
             });
           } else {
-            url = url.replace(new RegExp('(\/?):' + urlParam + '(\\W|$)', 'g'), function(match,
-                leadingSlashes, tail) {
-              if (tail.charAt(0) === '/') {
-                return tail;
-              } else {
-                return leadingSlashes + tail;
-              }
-            });
+            url = url.replace(regExp, '');
           }
         });
 
+        // replace escaped `\:` with `:`
+        url = url.replace(/\\:/g, ':');
         // strip trailing slashes and set the url
         url = url.replace(/\/+$/, '') || '/';
         // then replace collapse `/.` if found in the last URL path segment before the query
-        // E.g. `http://url.com/id./format?q=x` becomes `http://url.com/id.format?q=x`
+        // E.g. `http://url.com/id/.format?q=x` becomes `http://url.com/id.format?q=x`
         url = url.replace(/\/\.(?=\w+($|\?))/, '.');
         // replace escaped `/\.` with `/.`
-        return url.replace(/\/\\\./, '/.');
+        return url.replace(/\/\./, '/.');
       };
 
       /**
