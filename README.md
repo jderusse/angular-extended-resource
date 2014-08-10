@@ -77,10 +77,11 @@ First, read the documentation of [angular resource](http://docs.angularjs.org/ap
 Then, angular cached resource add a `$cached` property to each actions.
 When `$cache` is a boolean or a string, it's an alias for `$cache: {key: ...}`
 This property is an object containing contains:
-- key: (boolean or string) name of the storageKey
+- key: (boolean, string or function) name of the storageKey
     - When false, the cache will not be used
     - When true, The response will be cached with a storageKey equals to the URL of the resource (** beware of your filters **)
     - When string, The response will be cached with this string as storageKey. As for URL, you can use the sames placeHolders
+    - When function, The response will be cached under a key evaluated by a call to the function.
 - params: (object) List of defaults params and mapping between placeHolders and property in object
 - split: (object) Configuration for spliting the resource. This object contains dynamics properties.
     - The property is the path to the subresource.
@@ -91,7 +92,7 @@ Example:
 ```javascript
   .factory('Customer', function($cResource) {
     return $cResource('/api/customers/:id', {id: '@id'}, {
-      'get':   {method:'GET', $cache: {key:'customer/:id'}},
+      'get':   {method:'GET', $cache: true},
       'query': {method:'GET', $cache: false, isArray:true},
     });
   })
@@ -100,8 +101,8 @@ Example:
 ```javascript
   .factory('Customer', function($cResource) {
     return $cResource('/api/customers/:id', {id: '@id'}, {
-      'get':   {method:'GET', $cache: 'c_:id'},
-      'query': {method:'GET', $cache: {key: true, split: {'': {key:'c_:customerId', params:{customerId:'@id'}}}, isArray:true},
+      'get':   {method:'GET', $cache: {key: function(parameters) {return 'customer/' + parameters.id}}},
+      'query': {method:'GET', $cache: {key: true, split: {'': {key:'customer/:customerId', params:{customerId:'@id'}}}, isArray:true},
     });
   })
 ```

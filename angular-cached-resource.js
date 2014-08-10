@@ -314,6 +314,8 @@ angular.module('cResource', ['ngResource'])
           // do nothing
         } else if (angular.isString(cacheSettings.key)) {
           this.template = cacheSettings.key;
+        } else if (angular.isFunction(cacheSettings.key)) {
+          this.getKey = cacheSettings.key;
         } else {
           throw angular.$$minErr('$cResource')('badmember', 'cacheKey property is not valid.');
         }
@@ -417,7 +419,7 @@ angular.module('cResource', ['ngResource'])
         if (this.splitProperties.length) {
           this.splitResource(resource, this.getTemplateParams(callParams, resource, false));
         }
-        var key = this.getKey(this.getTemplateParams(callParams, resource));
+        var key = this.getKey(this.getTemplateParams(callParams, resource), resource);
         cache.put(key, resource);
 
         return key;
@@ -457,7 +459,7 @@ angular.module('cResource', ['ngResource'])
           return;
         }
 
-        var key = this.getKey(this.getTemplateParams(callParams, callData)),
+        var key = this.getKey(this.getTemplateParams(callParams, callData), null),
             resource = cache.get(key);
 
         if (!angular.isDefined(resource)) {
