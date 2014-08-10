@@ -5,7 +5,7 @@
 'use strict';
 
 angular.module('cResource', ['ngResource'])
-  .value('$cResourceConfig', function() {
+  .factory('$cResourceConfig', function() {
     return {
       prefix: '',
       ttl: 864000,
@@ -169,7 +169,7 @@ angular.module('cResource', ['ngResource'])
             ],
             encoded = JSON.stringify(o);
 
-        if (encoded  === undefined) {
+        if (angular.isUndefined(encoded)) {
           delete $window.localStorage[key];
         } else {
           $window.localStorage[key] = encoded;
@@ -183,7 +183,7 @@ angular.module('cResource', ['ngResource'])
        */
       Cache.prototype.get = function get(key) {
         var data = $window.localStorage[key];
-        if (data === undefined || data === 'undefined') {
+        if (angular.isUndefined(data) || data === 'undefined') {
           return undefined;
         }
         var s = JSON.parse(data);
@@ -196,7 +196,7 @@ angular.module('cResource', ['ngResource'])
         var _this = this,
             now = new Date().getTime();
         angular.forEach($window.localStorage, function(data, index) {
-          if (data !== undefined && data !== 'undefined') {
+          if (!angular.isUndefined(data) && data !== 'undefined') {
             var s = JSON.parse(data);
             if (angular.isArray(s) && s.length > 1) {
               if (s[0] + _this.ttl < now) {
@@ -240,7 +240,7 @@ angular.module('cResource', ['ngResource'])
           throw angular.$$minErr('badmember', 'Dotted member path "@{0}" is invalid.', path);
         }
         var keys = path.split('.');
-        for (var i = 0, ii = keys.length; i < ii && obj !== undefined; i++) {
+        for (var i = 0, ii = keys.length; i < ii && !angular.isUndefined(obj); i++) {
           var key = keys[i];
           obj = (obj !== null) ? obj[key] : undefined;
         }
@@ -263,7 +263,10 @@ angular.module('cResource', ['ngResource'])
             var objectCopy = angular.copy(object);
             object.length = 0;
             angular.forEach(objectCopy, function(element) {
-              object.push(callback(element));
+              var sub = callback(element);
+              if (!angular.isUndefined(sub)) {
+                object.push(callback(element));
+              }
             });
 
             return object;
@@ -350,7 +353,7 @@ angular.module('cResource', ['ngResource'])
        * @return object
        */
       Engine.prototype.extractParams = function extractParams(data, params, removeLinks) {
-        if (removeLinks === undefined) {
+        if (angular.isUndefined(removeLinks)) {
           removeLinks = true;
         }
 
@@ -360,7 +363,7 @@ angular.module('cResource', ['ngResource'])
           if (angular.isFunction(value)) { value = value(); }
           if (value && value.charAt && value.charAt(0) === '@') {
             var linked = pathExplorer.getElement(data, value.substr(1));
-            ids[key] = linked === undefined && !removeLinks ? value : linked;
+            ids[key] = angular.isUndefined(linked) && !removeLinks ? value : linked;
           } else {
             ids[key] = value;
           }
@@ -400,9 +403,14 @@ angular.module('cResource', ['ngResource'])
       Engine.prototype.splitResource = function splitResource(resource, templateParams) {
         var _this = this;
         angular.forEach(this.splitProperties.sort().reverse(), function(propertyPath) {
-          var engine = new Engine(_this.template + propertyPath, templateParams, _this.splitConfigs[propertyPath]);
+          var engine = new Engine(_this.template + '/' + propertyPath, templateParams, _this.splitConfigs[propertyPath]);
           pathExplorer.changeElement(resource, propertyPath, function(element) {
-            return '#' + engine.store(element, {}, element);
+            var ref = engine.store(element, {}, element);
+            if(!angular.isUndefined(ref)) {
+              return '#' + ref;
+            }
+
+            return undefined;
           });
         });
       };

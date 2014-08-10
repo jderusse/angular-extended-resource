@@ -6,6 +6,7 @@
         "it": true,
         "expect": true,
         "beforeEach": true,
+        "afterEach": true,
         "inject": true,
         "spyOn": true,
         "process": true

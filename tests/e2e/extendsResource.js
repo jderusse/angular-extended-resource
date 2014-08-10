@@ -1,6 +1,6 @@
 'use strict';
 
-describe('A service Customer using $resourceCached', function() {
+describe('A service using $cResource', function() {
   var Customer;
   beforeEach(function() {
     module('cResource');
@@ -9,7 +9,7 @@ describe('A service Customer using $resourceCached', function() {
     });
   });
 
-  describe('list all Customers', function() {
+  describe('calling action query', function() {
     var resource;
     beforeEach(function() {
       resource = Customer.query();
