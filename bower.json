@@ -1,7 +1,15 @@
 {
-  "name": "angular-cached-resource",
+  "name": "angular-resource-cached",
   "version": "1.0.0",
-  "main": "./angular-cached-resource.js",
+  "license": "MIT",
+  "main": "angular-resource-cached.js",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "components",
+    "test",
+    "karma.conf.js"
+  ],
   "dependencies": {
     "angular-resource": "~1.2.18"
   }

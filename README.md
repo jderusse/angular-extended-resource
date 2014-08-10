@@ -1,4 +1,4 @@
-# angular-cached-resource
+# angular-resource-cached
 
 ## TODO
 
@@ -17,7 +17,7 @@
 
 ## Description
 
-Angular cached resource is a wrapper for
+Angular resource cached is a wrapper for
 [Angular ngResouce](https://github.com/angular/angular.js/tree/master/src/ngResource).
 It provide a simple way to fetch resource from localStorage to provide a quick
 "stale" response, and let the original resource fetching data from real API.
@@ -31,13 +31,13 @@ The diference with the `cache` option are:
 Install with `bower`:
 
 ```shell
-bower install angular-cached-resource
+bower install angular-resource-cached
 ```
 
 Add a `<script>` to your `index.html`:
 
 ```html
-<script src="/bower_components/angular-cached-resource/angular-cached-resource.js"></script>
+<script src="/bower_components/angular-resource-cached/angular-resource-cached.js"></script>
 ```
 
 And add `cResource` as a dependency for your app:
@@ -313,6 +313,22 @@ the same storageKey
     });
   })
 ```
+
+
+## Author
+Jérémy Derussé, https://github.com/jeremy-derusse/angular-resource-cached
+
+## Date
+2014-08-10
+
+## Module Version
+1.0.0
+
+## Contributors
+
+## Change Log
+* v1.0.0
+    - Initial version.
 
 
 ## License

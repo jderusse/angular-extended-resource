@@ -1,3 +1,7 @@
+/*
+ Angular Resource Cached v1.0.0
+ License: MIT
+*/
 'use strict';
 
 angular.module('cResource', ['ngResource'])
