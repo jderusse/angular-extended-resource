@@ -11,7 +11,7 @@ module.exports = function(config) {
       'components/angular/angular.js',
       'components/angular-mocks/angular-mocks.js',
       'components/angular-resource/angular-resource.js',
-      'angular-resource-cached.js',
+      'src/angular-resource-cached.js',
       'tests/e2e/**/*.js',
       //'tests/unit/**/*.js',
     ],
