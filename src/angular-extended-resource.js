@@ -47,7 +47,7 @@ angular.module('exResource', ['ngResource'])
       gc: function gc() {
         var now = new Date().getTime();
         angular.forEach($window.localStorage, function(data, index) {
-          if (!angular.isUndefined(data) && data !== 'undefined') {
+          if (angular.isDefined(data) && data !== 'undefined') {
             var s = JSON.parse(data);
             if (angular.isArray(s) && s.length > 1) {
               if (s[0] + $xResourceConfig.ttl < now) {
@@ -69,7 +69,7 @@ angular.module('exResource', ['ngResource'])
       }
     };
 
-    this.$get = ['$window', '$interval', '$resource', '$xResourceConfig', '$xResourceCacheEngine', function($window, $interval, $resource, $xResourceConfig, $xResourceCacheEngine) {
+    this.$get = ['$window', '$http', '$log', '$resource', '$xResourceConfig', '$xResourceCacheEngine', function($window, $http, $log, $resource, $xResourceConfig, $xResourceCacheEngine) {
       /**
        * Manipulate template and placeHolder
        *
@@ -223,7 +223,7 @@ angular.module('exResource', ['ngResource'])
           throw angular.$$minErr('badmember', 'Dotted member path "@{0}" is invalid.', path);
         }
         var keys = path.split('.');
-        for (var i = 0, ii = keys.length; i < ii && !angular.isUndefined(obj); i++) {
+        for (var i = 0, ii = keys.length; i < ii && angular.isDefined(obj); i++) {
           var key = keys[i];
           obj = (obj !== null) ? obj[key] : undefined;
         }
@@ -247,7 +247,7 @@ angular.module('exResource', ['ngResource'])
             object.length = 0;
             angular.forEach(objectCopy, function(element) {
               var sub = callback(element);
-              if (!angular.isUndefined(sub)) {
+              if (angular.isDefined(sub)) {
                 object.push(callback(element));
               }
             });
@@ -389,7 +389,7 @@ angular.module('exResource', ['ngResource'])
           var engine = new Engine(_this.template + '/' + propertyPath, templateParams, _this.splitConfigs[propertyPath]);
           pathExplorer.changeElement(resource, propertyPath, function(element) {
             var ref = engine.store(element, {}, element);
-            if(!angular.isUndefined(ref)) {
+            if(angular.isDefined(ref)) {
               return '#' + ref;
             }
 
@@ -457,7 +457,7 @@ angular.module('exResource', ['ngResource'])
         var key = this.getKey(this.getTemplateParams(callParams, callData), null),
             resource = $xResourceCacheEngine.get(key);
 
-        if (!angular.isDefined(resource)) {
+        if (angular.isUndefined(resource)) {
           return resource;
         }
 
@@ -552,8 +552,28 @@ angular.module('exResource', ['ngResource'])
         };
       };
 
+      var extractResponse = function(data, accessProperty) {
+        if (angular.isDefined(data[accessProperty])) {
+          return data[accessProperty];
+        } else {
+          $log.error(
+            'Error in resource configuration. Expected response to contain a property "' + accessProperty + '" but got ' + JSON.stringify(data)
+          );
+        }
+
+        return data;
+      };
+
       return function(url, paramDefaults, actions, options) {
         actions = angular.extend({}, provider.defaults.actions, actions);
+        angular.forEach(actions, function(action) {
+          if (angular.isDefined(action.$accessProperty)) {
+            action.transformResponse = $http.defaults.transformResponse.concat([function(data) {
+              return extractResponse(data, action.$accessProperty);
+            }]);
+          }
+        });
+
         var resource = $resource(url, paramDefaults, actions, options);
 
         angular.forEach(actions, function(action, name) {

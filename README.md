@@ -6,6 +6,38 @@ Angular extended resource is a wrapper for
 [Angular ngResouce](https://github.com/angular/angular.js/tree/master/src/ngResource).
 It provide a simple way to fetch resource from localStorage to provide a quick
 "stale" response, and let the original resource fetching data from real API.
+And to extract responses from a sub object: Some browsers can not handle a JSON
+response with an array on toplevel. Rest service commonly wrap the resonse
+inside an object
+
+```json
+// bad
+[
+    {
+        id: 1,
+        name: "foo"
+    },
+    {
+        id: 2,
+        name: "bar"
+    }
+]
+
+// good
+{
+    "customers": [
+        {
+            id: 1,
+            name: "foo"
+        },
+        {
+            id: 2,
+            name: "bar"
+        }
+    ]
+}
+```
+
 
 The diference with the `cache` option are:
 - the promise is not canceled
@@ -55,7 +87,76 @@ app.factory('Customer', function($xResouce) {
 
 ** Easy isn't it? **
 
-## Documentation
+## AccessProperty Documentation
+
+First, read the documentation of [angular resource](http://docs.angularjs.org/api/ngResource).
+
+Then, angular extended resource add a `$accessProperty` property to each actions.
+When defined, the response will be parsed an object with a toplevel property
+equals to the value of `$accessProperty` will be expected. The content of this
+property will be return as resource. If not, a error will be logged in the
+console
+
+```javascript
+  .factory('Customer', function($xResouce) {
+    return $xResouce('/api/customers/:id', {id: '@id'}, {
+      'get':    {method:'GET', $accessProperty: 'customer'},
+      'query':  {method:'GET', $accessProperty: 'customers', isArray:true},
+      'save':   {method:'POST', $accessProperty: 'customer'},
+      'delete': {method:'DELETE'},
+    });
+  })
+```
+
+This config will expect the following responses
+
+```json
+GET /customers
+{
+    "customers": [
+        {
+            id: 1,
+            name: "foo"
+        },
+        {
+            id: 2,
+            name: "bar"
+        }
+    ]
+}
+
+GET /customers/1
+{
+    "customer": {
+        id: 1,
+        name: "foo"
+    }
+}
+```
+
+and ngRessource will process the response as it was:
+
+```json
+GET /customers
+[
+    {
+        id: 1,
+        name: "foo"
+    },
+    {
+        id: 2,
+        name: "bar"
+    }
+]
+
+GET /customers/1
+{
+    id: 1,
+    name: "foo"
+}
+```
+
+## Cache Documentation
 
 First, read the documentation of [angular resource](http://docs.angularjs.org/api/ngResource).
 
