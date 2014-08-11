@@ -45,103 +45,124 @@ describe('A service using $cResource', function() {
 
   var dataprovider = [
     {config: {},
-      result:[]},
+      store: [],
+      fetch: []},
 
     // simple alias
     {config: {$cache: true},
-      result:[
-        {key: '/customers', value: fixtureCustomers}]},
+      store: [
+        {key: '/customers', value: fixtureCustomers}],
+      fetch: fixtureCustomers},
     {config: {$cache: false},
-      result:[]},
+      store: [],
+      fetch: []},
     {config: {$cache: 'foo/:id'},
-      result:[
-        {key: 'foo', value: fixtureCustomers}]},
+      store: [
+        {key: 'foo', value: fixtureCustomers}],
+      fetch: fixtureCustomers},
     {config: {$cache: function(p) {return 'foo/' + p.id;}},
-      result:[
-        {key: 'foo/undefined', value: fixtureCustomers}]},
+      store: [
+        {key: 'foo/undefined', value: fixtureCustomers}],
+      fetch: fixtureCustomers},
 
     // simple object
     {config: {$cache: {key: true}},
-      result:[
-        {key: '/customers', value: fixtureCustomers}]},
+      store: [
+        {key: '/customers', value: fixtureCustomers}],
+      fetch: fixtureCustomers},
     {config: {$cache: {key: false}},
-      result:[]},
+      store: [],
+      fetch: []},
     {config: {$cache: {key: 'foo/:id'}},
-      result:[
-        {key: 'foo', value: fixtureCustomers}]},
+      store: [
+        {key: 'foo', value: fixtureCustomers}],
+      fetch: fixtureCustomers},
     {config: {$cache: {key: function(p) {return 'foo/' + p.id;}}},
-      result:[
-        {key: 'foo/undefined', value: fixtureCustomers}]},
+      store: [
+        {key: 'foo/undefined', value: fixtureCustomers}],
+      fetch: fixtureCustomers},
 
     // params
     {config: {$cache: {key: 'c/:name'}},
-      result: [
-        {key: 'c', value: fixtureCustomers}]},
+      store: [
+        {key: 'c', value: fixtureCustomers}],
+      fetch: fixtureCustomers},
     {config: {$cache: {key: 'c/:name', params: {name: '@name'}}},
-      result: [
-        {key: 'c', value: fixtureCustomers}]},
+      store: [
+        {key: 'c', value: fixtureCustomers}],
+      fetch: fixtureCustomers},
     {config: {$cache: {key: 'c/:name', params: {name: 'bar'}}},
-      result: [
-        {key: 'c/bar', value: fixtureCustomers}]},
+      store: [
+        {key: 'c/bar', value: fixtureCustomers}],
+      fetch: fixtureCustomers},
     {config: {$cache: {key: 'c/:name', params: {name: function() {return 'baz';}}}},
-      result: [
-        {key: 'c/baz', value: fixtureCustomers}]},
+      store: [
+        {key: 'c/baz', value: fixtureCustomers}],
+      fetch: fixtureCustomers},
 
     // split
     {config: {$cache: {key: 'c/:id', split: {'': {key: true}}}},
-      result: [
+      store: [
         {key: 'c', value: ['#c/123', '#c/456']},
         {key: 'c/123', value: getFixtureCustomer(1)},
-        {key: 'c/456', value: getFixtureCustomer(2)}]},
+        {key: 'c/456', value: getFixtureCustomer(2)}],
+      fetch: fixtureCustomers},
     {config: {$cache: {key: 'c/:id', split: {'': {key: false}}}},
-      result: [
-        {key: 'c', value: []}]},
+      store: [
+        {key: 'c', value: []}],
+      fetch: []},
     {config: {$cache: {key: 'c/:id', split: {'': {key: true, split:{phones: {key: true}}}}}},
-      result: [
+      store: [
         {key: 'c', value: ['#c/123', '#c/456']},
         {key: 'c/123', value: getFixtureCustomer(1, ['#c/123//phones', '#c/123//phones'])},
         {key: 'c/456', value: getFixtureCustomer(2, ['#c/456//phones', '#c/456//phones'])},
         {key: 'c/123//phones', value: getFixturePhone(2)},
-        {key: 'c/456//phones', value: getFixturePhone(2)}]},
+        {key: 'c/456//phones', value: getFixturePhone(2)}],
+      fetch: [getFixtureCustomer(1, [getFixturePhone(2), getFixturePhone(2)]), getFixtureCustomer(2, [getFixturePhone(2), getFixturePhone(2)])]},
     {config: {$cache: {key: 'c/:id', split: {'': {key: true, split: {phones: {key: false}}}}}},
-      result: [
+      store: [
         {key: 'c', value: ['#c/123', '#c/456']},
         {key: 'c/123', value: getFixtureCustomer(1, [])},
-        {key: 'c/456', value: getFixtureCustomer(2, [])}]},
+        {key: 'c/456', value: getFixtureCustomer(2, [])}],
+      fetch: [getFixtureCustomer(1, []), getFixtureCustomer(2, [])]},
     {config: {$cache: {key: 'c/:id', split: {'': {key: true, split: {phones: {key: function(p, i) {return 'c/' + p.id + '/bar/' + i.id;}}}}}}},
-      result: [
+      store: [
         {key: 'c', value: ['#c/123', '#c/456']},
         {key: 'c/123', value: getFixtureCustomer(1, ['#c/123/bar/12', '#c/123/bar/34'])},
         {key: 'c/456', value: getFixtureCustomer(2, ['#c/456/bar/12', '#c/456/bar/34'])},
         {key: 'c/123/bar/12', value: getFixturePhone(1)},
         {key: 'c/123/bar/34', value: getFixturePhone(2)},
         {key: 'c/456/bar/12', value: getFixturePhone(1)},
-        {key: 'c/456/bar/34', value: getFixturePhone(2)}]},
+        {key: 'c/456/bar/34', value: getFixturePhone(2)}],
+      fetch: fixtureCustomers},
     {config: {$cache: {key: 'c/:id', split: {'': {key: true, split: {phones: {key: 'c/:id/bar/:subId'}}}}}},
-      result: [
+      store: [
         {key: 'c', value: ['#c/123', '#c/456']},
         {key: 'c/123', value: getFixtureCustomer(1, ['#c/123/bar', '#c/123/bar'])},
         {key: 'c/456', value: getFixtureCustomer(2, ['#c/456/bar', '#c/456/bar'])},
         {key: 'c/123/bar', value: getFixturePhone(2)},
-        {key: 'c/456/bar', value: getFixturePhone(2)}]},
+        {key: 'c/456/bar', value: getFixturePhone(2)}],
+      fetch: [getFixtureCustomer(1, [getFixturePhone(2), getFixturePhone(2)]), getFixtureCustomer(2, [getFixturePhone(2), getFixturePhone(2)])]},
     {config: {$cache: {key: 'c/:id', split: {'': {key: true, split: {phones: {key: 'c/:id/bar/:subId', params: {subId: '@id'}}}}}}},
-      result: [
+      store: [
         {key: 'c', value: ['#c/123', '#c/456']},
         {key: 'c/123', value: getFixtureCustomer(1, ['#c/123/bar/12', '#c/123/bar/34'])},
         {key: 'c/456', value: getFixtureCustomer(2, ['#c/456/bar/12', '#c/456/bar/34'])},
         {key: 'c/123/bar/12', value: getFixturePhone(1)},
         {key: 'c/123/bar/34', value: getFixturePhone(2)},
         {key: 'c/456/bar/12', value: getFixturePhone(1)},
-        {key: 'c/456/bar/34', value: getFixturePhone(2)}]},
+        {key: 'c/456/bar/34', value: getFixturePhone(2)}],
+      fetch: fixtureCustomers},
     {config: {$cache: {key: 'c/:id', split: {'': {key: true, split: {phones: {key: 'c/:id/bar/:subId', params: {id: '@parentId', subId: '@id'}}}}}}},
-      result: [
+      store: [
         {key: 'c', value: ['#c/123', '#c/456']},
         {key: 'c/123', value: getFixtureCustomer(1, ['#c/789/bar/12', '#c/789/bar/34'])},
         {key: 'c/456', value: getFixtureCustomer(2, ['#c/789/bar/12', '#c/789/bar/34'])},
         {key: 'c/789/bar/12', value: getFixturePhone(1)},
-        {key: 'c/789/bar/34', value: getFixturePhone(2)}]},
+        {key: 'c/789/bar/34', value: getFixturePhone(2)}],
+      fetch: fixtureCustomers},
     {config: {$cache: {key: 'c/:id', split: {'': {key: true, split: {phones: {key: 'c/:id/bar/:subId', params: {subId: '@id'}}, 'phones.country': {key: 'c/:id/baz/:subSubId', params: {subSubId: '@id'}}}}}}},
-      result: [
+      store: [
         {key: 'c', value: ['#c/123', '#c/456']},
         {key: 'c/123', value: getFixtureCustomer(1, ['#c/123/bar/12', '#c/123/bar/34'])},
         {key: 'c/456', value: getFixtureCustomer(2, ['#c/456/bar/12', '#c/456/bar/34'])},
@@ -150,9 +171,10 @@ describe('A service using $cResource', function() {
         {key: 'c/456/bar/12', value: getFixturePhone(1, '#c/456/baz/fr')},
         {key: 'c/456/bar/34', value: getFixturePhone(2, '#c/456/baz/fr')},
         {key: 'c/123/baz/fr', value: fixtureCountry},
-        {key: 'c/456/baz/fr', value: fixtureCountry}]},
+        {key: 'c/456/baz/fr', value: fixtureCountry}],
+      fetch: fixtureCustomers},
     {config: {$cache: {key: 'c/:id', split: {'': {key: true, split: {phones: {key: 'c/:id/bar/:subId', params: {subId: '@id'}, split: {country: {key: 'c/:id/bar/:subId/baz/:subSubId', params: {subSubId: '@id'}}}}}}}}},
-      result: [
+      store: [
         {key: 'c', value: ['#c/123', '#c/456']},
         {key: 'c/123', value: getFixtureCustomer(1, ['#c/123/bar/12', '#c/123/bar/34'])},
         {key: 'c/456', value: getFixtureCustomer(2, ['#c/456/bar/12', '#c/456/bar/34'])},
@@ -163,12 +185,50 @@ describe('A service using $cResource', function() {
         {key: 'c/123/bar/12/baz/fr', value: fixtureCountry},
         {key: 'c/123/bar/34/baz/fr', value: fixtureCountry},
         {key: 'c/456/bar/12/baz/fr', value: fixtureCountry},
-        {key: 'c/456/bar/34/baz/fr', value: fixtureCountry}]},
+        {key: 'c/456/bar/34/baz/fr', value: fixtureCountry}],
+      fetch: fixtureCustomers},
   ];
 
   angular.forEach(dataprovider, function(data) {
-    var config = data.config;
-    var expectations = data.result;
+    var config = data.config,
+        store = data.store,
+        fetch = data.fetch;
+    describe('calling a action with config ' + JSON.stringify(config), function() {
+      var resource, $window;
+      beforeEach(function() {
+        inject(function($injector) {
+          $window = $injector.get('$window');
+          $window.localStorage.clear();
+
+          angular.forEach(store, function(expectation) {
+            $window.localStorage[expectation.key] = JSON.stringify([new Date().getTime(), expectation.value]);
+          });
+
+          Customer = $injector.get('$cResource')('/customers/:id', {id: '@id'}, {
+            query: angular.extend({}, {method: 'GET', isArray: true}, config)
+          });
+        });
+
+        resource = Customer.query();
+      });
+
+      var cleanUp = function(data) {
+        delete data.$cache;
+        delete data.$promise;
+        delete data.$resolved;
+
+        if (angular.isObject(data) || angular.isArray(data)) {
+          angular.forEach(data, function(item) {
+            cleanUp(item);
+          });
+        }
+      };
+
+      it('should retreives a customer', function() {
+        cleanUp(resource);
+        expect(JSON.stringify(resource)).toEqual(JSON.stringify(fetch));
+      });
+    });
     describe('calling a action with config ' + JSON.stringify(config), function() {
       var resource, $httpBackend, $window;
       beforeEach(function() {
@@ -192,12 +252,12 @@ describe('A service using $cResource', function() {
       });
 
       describe('when API respond', function() {
-        it('should store "' + JSON.stringify(expectations) + '"', function() {
-          angular.forEach(expectations, function(expectation) {
+        it('should store "' + JSON.stringify(store) + '"', function() {
+          angular.forEach(store, function(expectation) {
             expect($window.localStorage[expectation.key]).toBeDefined();
             expect(JSON.parse($window.localStorage[expectation.key])[1]).toEqual(expectation.value);
           });
-          expect($window.localStorage.length).toBe(expectations.length);
+          expect($window.localStorage.length).toBe(store.length);
         });
       });
     });
