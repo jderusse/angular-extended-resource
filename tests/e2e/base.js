@@ -1,11 +1,11 @@
 'use strict';
 
-describe('A service using $cResource', function() {
+describe('A service using $xResource', function() {
   var Customer;
   beforeEach(function() {
-    module('cResource');
+    module('exResource');
     inject(function($injector) {
-      Customer = $injector.get('$cResource')('/customers/:id', {id: '@id'});
+      Customer = $injector.get('$xResource')('/customers/:id', {id: '@id'});
     });
   });
 

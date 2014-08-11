@@ -1,17 +1,17 @@
 /*
- Angular Resource Cached v1.0.0
+ Angular Extended Resource v1.0.0
  License: MIT
 */
 'use strict';
 
-angular.module('cResource', ['ngResource'])
-  .factory('$cResourceConfig', function() {
+angular.module('exResource', ['ngResource'])
+  .factory('$xResourceConfig', function() {
     return {
       prefix: '',
       ttl: 864000,
     };
   })
-  .provider('$cResource', function() {
+  .provider('$xResource', function() {
     var provider = this;
 
     this.defaults = {
@@ -21,7 +21,7 @@ angular.module('cResource', ['ngResource'])
       }
     };
 
-    this.$get = ['$window', '$interval', '$resource', '$cResourceConfig', function($window, $interval, $resource, $cResourceConfig) {
+    this.$get = ['$window', '$interval', '$resource', '$xResourceConfig', function($window, $interval, $resource, $xResourceConfig) {
       /**
        * Manipulate template and placeHolder
        *
@@ -86,10 +86,9 @@ angular.module('cResource', ['ngResource'])
           var url = template,
               urlParams = {};
 
-
           angular.forEach(url.split(/\W/), function(param){
             if (param === 'hasOwnProperty') {
-              throw angular.$$minErr('$cResource')('badname', 'hasOwnProperty is not a valid parameter name.');
+              throw angular.$$minErr('$xResource')('badname', 'hasOwnProperty is not a valid parameter name.');
             }
 
             var paramRegExp = new RegExp('(^|[^\\\\]):' + param + '(\\W|$)', 'g');
@@ -275,7 +274,7 @@ angular.module('cResource', ['ngResource'])
           }
         } else {
           if (!this.isValidDottedPath(path)) {
-            throw angular.$$minErr('$cResource')('badmember', 'Dotted member path "@{0}" is invalid.', path);
+            throw angular.$$minErr('$xResource')('badmember', 'Dotted member path "@{0}" is invalid.', path);
           }
           var keys = path.split('.');
           var key = keys.shift();
@@ -324,11 +323,11 @@ angular.module('cResource', ['ngResource'])
         } else if (angular.isFunction(cacheSettings.key)) {
           this.getKey = cacheSettings.key;
         } else {
-          throw angular.$$minErr('$cResource')('badmember', 'cacheKey property is not valid.');
+          throw angular.$$minErr('$xResource')('badmember', 'cacheKey property is not valid.');
         }
 
         if (angular.isDefined(cacheSettings.split) && !angular.isObject(cacheSettings.split)) {
-          throw angular.$$minErr('$cResource')('badmember', 'cacheSplit property must be an object.');
+          throw angular.$$minErr('$xResource')('badmember', 'cacheSplit property must be an object.');
         }
 
         if (angular.isDefined(cacheSettings.params)) {
@@ -391,7 +390,7 @@ angular.module('cResource', ['ngResource'])
        * @return string
        */
       Engine.prototype.getKey = function getKey(templateParams) {
-        return $cResourceConfig.prefix + templateEngine.render(this.template, templateParams);
+        return $xResourceConfig.prefix + templateEngine.render(this.template, templateParams);
       };
 
       /**
@@ -487,7 +486,7 @@ angular.module('cResource', ['ngResource'])
 
       var pathExplorer = new PathExplorer(),
           templateEngine = new TemplateEngine(),
-          cache = new Cache($cResourceConfig.ttl);
+          cache = new Cache($xResourceConfig.ttl);
 
       $interval(function() {cache.gc();}, 30000);
       cache.gc();
@@ -538,7 +537,7 @@ angular.module('cResource', ['ngResource'])
             break;
           case 0: break;
           default:
-            throw angular.$$minErr('$cResource')('badargs',
+            throw angular.$$minErr('$xResource')('badargs',
               'Expected up to 4 arguments [params, data, success, error], got {0} arguments',
               arguments.length);
           }

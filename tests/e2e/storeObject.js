@@ -1,9 +1,9 @@
 'use strict';
 
-describe('A service using $cResource', function() {
+describe('A service using $xResource', function() {
   var Customer;
   beforeEach(function() {
-    module('cResource');
+    module('exResource');
   });
 
   var getFixtureCustomer = function(phones) {
@@ -164,7 +164,7 @@ describe('A service using $cResource', function() {
             $window.localStorage[expectation.key] = JSON.stringify([new Date().getTime(), expectation.value]);
           });
 
-          Customer = $injector.get('$cResource')('/customers/:id', {id: '@id'}, {
+          Customer = $injector.get('$xResource')('/customers/:id', {id: '@id'}, {
             get: angular.extend({}, {method: 'GET'}, config)
           });
         });
@@ -199,7 +199,7 @@ describe('A service using $cResource', function() {
           $httpBackend.when('GET', '/customers/123')
             .respond(fixtureCustomer);
 
-          Customer = $injector.get('$cResource')('/customers/:id', {id: '@id'}, {
+          Customer = $injector.get('$xResource')('/customers/:id', {id: '@id'}, {
             get: angular.extend({}, {method: 'GET'}, config)
           });
         });

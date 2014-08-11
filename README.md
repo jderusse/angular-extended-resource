@@ -1,23 +1,8 @@
-# angular-resource-cached
-
-## TODO
-
-- [x] Store date as integer
-- [x] Merge split resource with original cache
-- [x] Split everything
-    - [x] Split resource on storage
-    - [x] Add meta-data on split resources
-    - [x] Restore split resource
-    - [x] Add option to customize params on cache (id: @id) (on parent or on split)
-    - [x] Prefix cache keys
-    - [x] Handler split of isArray resources (root is an array)
-- [x] Keep parents references to generate cacheKey for split sub resources
-- [x] Cache (in memory) calculs made on route (parse url, etc...)
-- [ ] Add cache key as functions
+# angular-extended-resource
 
 ## Description
 
-Angular resource cached is a wrapper for
+Angular extended resource is a wrapper for
 [Angular ngResouce](https://github.com/angular/angular.js/tree/master/src/ngResource).
 It provide a simple way to fetch resource from localStorage to provide a quick
 "stale" response, and let the original resource fetching data from real API.
@@ -31,19 +16,19 @@ The diference with the `cache` option are:
 Install with `bower`:
 
 ```shell
-bower install angular-resource-cached
+bower install angular-extended-resource
 ```
 
 Add a `<script>` to your `index.html`:
 
 ```html
-<script src="/bower_components/angular-resource-cached/angular-resource-cached.js"></script>
+<script src="/bower_components/angular-extended-resource/angular-extended-resource.js"></script>
 ```
 
-And add `cResource` as a dependency for your app:
+And add `exResource` as a dependency for your app:
 
 ```javascript
-angular.module('myApp', ['cResource']);
+angular.module('myApp', ['exResource']);
 ```
 
 ## Differences with angular-resource
@@ -52,8 +37,8 @@ angular.module('myApp', ['cResource']);
 // angular resource
 angular.module('myApp', ['ngResource']);
 
-// angular cached resource
-angular.module('myApp', ['cResource']);
+// angular extended resource
+angular.module('myApp', ['exResource']);
 ```
 
 ```javascript
@@ -62,9 +47,9 @@ app.factory('Customer', function($resource) {
   return $resource('/api/customers/:id', {id: '@id'});
 })
 
-// angular cached resource
-app.factory('Customer', function($cResource) {
-  return $cResource('/api/customers/:id', {id: '@id'});
+// angular extended resource
+app.factory('Customer', function($xResouce) {
+  return $xResouce('/api/customers/:id', {id: '@id'});
 })
 ```
 
@@ -74,7 +59,7 @@ app.factory('Customer', function($cResource) {
 
 First, read the documentation of [angular resource](http://docs.angularjs.org/api/ngResource).
 
-Then, angular cached resource add a `$cached` property to each actions.
+Then, angular extended resource add a `$cached` property to each actions.
 When `$cache` is a boolean or a string, it's an alias for `$cache: {key: ...}`
 This property is an object containing contains:
 - key: (boolean, string or function) name of the storageKey
@@ -90,8 +75,8 @@ This property is an object containing contains:
 Example:
 
 ```javascript
-  .factory('Customer', function($cResource) {
-    return $cResource('/api/customers/:id', {id: '@id'}, {
+  .factory('Customer', function($xResouce) {
+    return $xResouce('/api/customers/:id', {id: '@id'}, {
       'get':   {method:'GET', $cache: true},
       'query': {method:'GET', $cache: false, isArray:true},
     });
@@ -99,8 +84,8 @@ Example:
 ```
 
 ```javascript
-  .factory('Customer', function($cResource) {
-    return $cResource('/api/customers/:id', {id: '@id'}, {
+  .factory('Customer', function($xResouce) {
+    return $xResouce('/api/customers/:id', {id: '@id'}, {
       'get':   {method:'GET', $cache: {key: function(parameters) {return 'customer/' + parameters.id}}},
       'query': {method:'GET', $cache: {key: true, split: {'': {key:'customer/:customerId', params:{customerId:'@id'}}}, isArray:true},
     });
@@ -160,8 +145,8 @@ It could be interested to store countries in a separate localStorage to reduce
 size of the resource.
 
 ```javascript
-  .factory('Customer', function($cResource) {
-    return $cResource('/api/customers/:id', {id: '@id'}, {
+  .factory('Customer', function($xResouce) {
+    return $xResouce('/api/customers/:id', {id: '@id'}, {
       get: {method:'GET', $cache:{
         key: 'customer/:id',        // Customer will be store in localStorage under key customer/:customerId
         split: {                    // Lets split the customer object
@@ -181,8 +166,8 @@ The following sample will store country, addresses, and customer in separates
 caches slots.
 
 ```javascript
-  .factory('Customer', function($cResource) {
-    return $cResource('/api/customers/:id', {id: '@id'}, {
+  .factory('Customer', function($xResouce) {
+    return $xResouce('/api/customers/:id', {id: '@id'}, {
       get: {method:'GET', $cache:{
         key: 'customer/:id',
         split: {
@@ -202,8 +187,8 @@ caches slots.
 this example is equals to
 
 ```javascript
-  .factory('Customer', function($cResource) {
-    return $cResource('/api/customers/:id', {id: '@id'}, {
+  .factory('Customer', function($xResouce) {
+    return $xResouce('/api/customers/:id', {id: '@id'}, {
       get: {method:'GET', $cache:{
         key: 'customer/:id',
         split: {
@@ -225,30 +210,30 @@ this example is equals to
 Each stored resource will be automatically removed when there life time will
 extends the configured TTL.
 You're able to define a global prefix to the storageKey or change the ttl
-with the $cResourceConfig service
+with the $xResouceConfig service
 
 ```javascript
 angular.module('app', ['cResource'])
-  .run(function($cResourceConfig, myAuthService) {
-    $cResourceConfig.prefix = 'u/' + myAuthService.user.id + '/';
-    $cResourceConfig.ttl = 24 * 3600 * 1000; // 24 hours
+  .run(function($xResouceConfig, myAuthService) {
+    $xResouceConfig.prefix = 'u/' + myAuthService.user.id + '/';
+    $xResouceConfig.ttl = 24 * 3600 * 1000; // 24 hours
   })
 ```
 
-Because $cResouce is a provider, you can change the default action's behaviors
+Because $xResouce is a provider, you can change the default action's behaviors
 
 ```javascript
 angular.module('app', ['cResource'])
-  .config(function($cResourceProvider) {
-    $cResourceProvider.defaults.actions.query.$cache = false;
+  .config(function($xResouceProvider) {
+    $xResouceProvider.defaults.actions.query.$cache = false;
   })
 ```
 
 In split resources, you can use identifiers of parents to compose the key.
 
 ```javascript
-  .factory('Customer', function($cResource) {
-    return $cResource('/api/customers/:id', {id: '@id'}, {
+  .factory('Customer', function($xResouce) {
+    return $xResouce('/api/customers/:id', {id: '@id'}, {
       get: {method:'GET', $cache:{
         key: 'customer/:customerId',
         params: {customerId: '@id'}
@@ -270,8 +255,8 @@ the same storageKey
 
 ```javascript
   // bad
-  .factory('Customer', function($cResource) {
-    return $cResource('/api/customers/:id', {id: '@id'}, {
+  .factory('Customer', function($xResouce) {
+    return $xResouce('/api/customers/:id', {id: '@id'}, {
       get: {method:'GET', $cache:{
         key: 'customer/:id',
         split: {
@@ -284,8 +269,8 @@ the same storageKey
   })
 
   // good
-  .factory('Customer', function($cResource) {
-    return $cResource('/api/customers/:id', {id: '@id'}, {
+  .factory('Customer', function($xResouce) {
+    return $xResouce('/api/customers/:id', {id: '@id'}, {
       get: {method:'GET', $cache:{
         key: 'customer/:id',
         split: {
@@ -298,8 +283,8 @@ the same storageKey
     });
 
   // good
-  .factory('Customer', function($cResource) {
-    return $cResource('/api/customers/:id', {id: '@id'}, {
+  .factory('Customer', function($xResouce) {
+    return $xResouce('/api/customers/:id', {id: '@id'}, {
       get: {method:'GET', $cache:{
         key: 'customer/:customerId',
         params: {customerId; '@id'}
@@ -316,7 +301,7 @@ the same storageKey
 
 
 ## Author
-Jérémy Derussé, https://github.com/jeremy-derusse/angular-resource-cached
+Jérémy Derussé, https://github.com/jeremy-derusse/angular-extended-resource
 
 ## Date
 2014-08-10
