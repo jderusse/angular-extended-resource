@@ -14,12 +14,12 @@ inside an object
 // bad
 [
     {
-        id: 1,
-        name: "foo"
+        "id": 1,
+        "name": "foo"
     },
     {
-        id: 2,
-        name: "bar"
+        "id": 2,
+        "name": "bar"
     }
 ]
 
@@ -27,12 +27,12 @@ inside an object
 {
     "customers": [
         {
-            id: 1,
-            name: "foo"
+            "id": 1,
+            "name": "foo"
         },
         {
-            id: 2,
-            name: "bar"
+            "id": 2,
+            "name": "bar"
         }
     ]
 }
@@ -115,12 +115,12 @@ GET /customers
 {
     "customers": [
         {
-            id: 1,
-            name: "foo"
+            "id": 1,
+            "name": "foo"
         },
         {
-            id: 2,
-            name: "bar"
+            "id": 2,
+            "name": "bar"
         }
     ]
 }
@@ -128,8 +128,8 @@ GET /customers
 GET /customers/1
 {
     "customer": {
-        id: 1,
-        name: "foo"
+        "id": 1,
+        "name": "foo"
     }
 }
 ```
@@ -140,19 +140,19 @@ and ngRessource will process the response as it was:
 GET /customers
 [
     {
-        id: 1,
-        name: "foo"
+        "id": 1,
+        "name": "foo"
     },
     {
-        id: 2,
-        name: "bar"
+        "id": 2,
+        "name": "bar"
     }
 ]
 
 GET /customers/1
 {
-    id: 1,
-    name: "foo"
+    "id": 1,
+    "name": "foo"
 }
 ```
 
@@ -419,9 +419,9 @@ Jérémy Derussé, https://github.com/jeremy-derusse/angular-extended-resource
 
 ## License
 
-The MIT License
+The MIT License (MIT)
 
-Copyright (c) 2010-2012 Google, Inc. http://angularjs.org
+Copyright (c) 2014 Jérémy Derussé
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -430,13 +430,13 @@ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
