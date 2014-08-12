@@ -6,38 +6,7 @@ Angular extended resource is a wrapper for
 [Angular ngResouce](https://github.com/angular/angular.js/tree/master/src/ngResource).
 It provide a simple way to fetch resource from localStorage to provide a quick
 "stale" response, and let the original resource fetching data from real API.
-And to extract responses from a sub object: Some browsers can not handle a JSON
-response with an array on toplevel. Rest service commonly wrap the resonse
-inside an object
-
-```json
-// bad
-[
-    {
-        "id": 1,
-        "name": "foo"
-    },
-    {
-        "id": 2,
-        "name": "bar"
-    }
-]
-
-// good
-{
-    "customers": [
-        {
-            "id": 1,
-            "name": "foo"
-        },
-        {
-            "id": 2,
-            "name": "bar"
-        }
-    ]
-}
-```
-
+And to extract responses from a sub object:
 
 The diference with the `cache` option are:
 - the promise is not canceled
@@ -54,7 +23,7 @@ bower install angular-extended-resource
 Add a `<script>` to your `index.html`:
 
 ```html
-<script src="/bower_components/angular-extended-resource/angular-extended-resource.js"></script>
+<script src="/bower_components/angular-extended-resource/dist/angular-extended-resource.js"></script>
 ```
 
 And add `exResource` as a dependency for your app:
@@ -88,6 +57,37 @@ app.factory('Customer', function($xResouce) {
 ** Easy isn't it? **
 
 ## AccessProperty Documentation
+
+Some browsers can not handle a JSON response with an array on toplevel. Rest
+service commonly wrap the resonse inside an object
+
+```json
+// bad
+[
+    {
+        "id": 1,
+        "name": "foo"
+    },
+    {
+        "id": 2,
+        "name": "bar"
+    }
+]
+
+// good
+{
+    "customers": [
+        {
+            "id": 1,
+            "name": "foo"
+        },
+        {
+            "id": 2,
+            "name": "bar"
+        }
+    ]
+}
+```
 
 First, read the documentation of [angular resource](http://docs.angularjs.org/api/ngResource).
 
