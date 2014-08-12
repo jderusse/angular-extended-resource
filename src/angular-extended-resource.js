@@ -538,8 +538,6 @@ angular.module('exResource', ['ngResource'])
           if (angular.isDefined(stored)) {
             angular.extend(response, stored);
             response.$cache = stored.$cache;
-          } else {
-            response.$cache = {updated: null, stale: true};
           }
 
           response.$promise.then(function() {
