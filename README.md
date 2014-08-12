@@ -5,8 +5,15 @@
 [X] Store date as integer
 [X] Merge splitted resource with original cache
 [ ] Split everything
+    [X] Split resource on storage
+    [X] Add metadata on splitted resources
+    [X] Restore splitted resource
+    [X] Add option to customize params on cache (id: @id) (on parent or on split)
+    [X] Prefix cache keys
+    [ ] Keep parents references to generate cacheKey for splitted sub resources
+    [X] Handler split of isArray resources (root is an array)
+[ ] Cache (in memory) calculs made on route (parse url, etc...)
 [ ] Add cache key as functions
-[ ] In splitted resources store only id instead of full key
 
 ## Description
 
@@ -60,46 +67,43 @@ Easy isn't it?
 
 First, read the documentation of [angular resource](http://docs.angularjs.org/api/ngResource).
 
-Then, angular cached resource add a `$cached` property to each actions. The availalbles values of `$cache` are:
-- false: (or property undefined) Cache will not be used
-- true: The response will be cached in local storage with a storageKey equals to the URL of the resource (** beware of your filters **)
-- string: The response will be cached in local storage with this string as storageKey. As for URL, you can use the sames placeHolders
-- object: For advanced cache strategy this object contains this following properties:
-   - key: (boolean or string) who works as `$cache` property
-   - splitKey: (boolean or string) store array resource on multiple subkeys
+Then, angular cached resource add a `$cached` property to each actions. When `$cache` is a boolean or a string, it's an alias for `$cache: {key: ...}` THi property contains:
+- key: (boolean or string) name of the storageKey
+    - When false, the cache will not be usedwho works as `$cache` property
+    - When true, The response will be cached with a storageKey equals to the URL of the resource (** beware of your filters **)
+    - When true, The response will be cached with this string as storageKey. As for URL, you can use the sames placeHolders
+- params: (object) List of defaults params and mapping between placeHolders and property in object
+- split: (object) Configuration for spliting the resource. This object contains dynamics properties.
+    - The property is the path to the subresource.
+    - The value is the cache configuration for the subrsource. It format is identical to $cache (it's recurcive)
 
 Example:
 
 ```javascript
   .factory('Customer', function($cResource) {
     return $cResource('/api/customers/:id', {id: '@id'}, {
-      'get':    {method:'GET', $cache: 'c_:id'},
-      'query':  {method:'GET', $cache: false, isArray:true},
+      'get':   {method:'GET', $cache: {key:'customer/:id'}},
+      'query': {method:'GET', $cache: false, isArray:true},
     });
   })
-
 ```
 
 ```javascript
   .factory('Customer', function($cResource) {
     return $cResource('/api/customers/:id', {id: '@id'}, {
-      'get':    {method:'GET', $cache: 'customer_:id'},
-      'query':  {method:'GET', $cache: {key: 'customers', splitKey: 'customer_:id'}, isArray:true},
+      'get':   {method:'GET', $cache: 'c_:id'},
+      'query': {method:'GET', $cache: {key: true, split: {'': {key:'c_:customerId, params:{customerId:'@id'}}}, isArray:true},
     });
   })
-
 ```
 
-The response returned by angular cache resource contains a `$cache` property. This proerty is an object with:
+The response returned by angular cache resource contains a `$cache` property. This property is an object containing:
+- updated: Date where the resource fetch from the API for the last time
+- stale: When true, the properties of the resource came from cache. Otherwise it has been fetch from API.
 
-- created: Date where the resource where stored in cache for the first time
-- created: Date where the resource where stored in cache for the last time
-- stale: When true, the properties of the resource came from cache. Otherwise false.
-
-The `stale` sub-property let you define a custom class to informe the users, that the resource is not fuly loaded.
+Because the `stale` sub-property is updated when the API respond and when the object is updated with fresh data, it let you define a custom class to informe the users, that the resource is not fuly loaded.
 
 ```html
-
   <style type="text/css">
   .stale {
     color: gray;
@@ -107,8 +111,121 @@ The `stale` sub-property let you define a custom class to informe the users, tha
   </style>
   ...
   <div ng-class="{stale: resource.$cache.stale}">{{ resource }}</div>
+```
+
+If the resource of your API is complexe and some parts are used by many other resources, you can split and share this resource.
+This will reduce the size of each resource.
+
+Her is sample of rsponse of `GET /api/customer/2`
+```json
+{
+  "id": 2,
+  "name": "John Doe",
+  "addresses": [
+    {
+      "id": 1,
+      "street": "foo",
+      "country": {
+        "code": "fr",
+        "name": "france"
+      }
+    },
+    {
+      "id": 2,
+      "street": "bar",
+      "country": {
+        "code": "us",
+        "name": "United States"
+      }
+    }
+  ]
+}
+```
+
+It could be interrested to store coutries in a separate localStorage to reduce size of the resource.
+
+```javascript
+  .factory('Customer', function($cResource) {
+    return $cResource('/api/customers/:id', {id: '@id'}, {
+      get: {method:'GET', $cache:{
+        key: 'customer/:id', # Customer will be store in localStorage under key customer/:customerId
+        split: { # Lets split the customer object
+          'addresses.country': { # Split each country of each addresses of the resource
+            key: 'country/:id', # Store this part in cache under key country/:code
+            params: {'id': '@code'} # As for placeholders in url, looks at @code property in the subObject Country
+          }
+        }
+      }}
+    });
+  })
 
 ```
+
+You can define as many split as you want et you can split nestead objects.
+The following sample will store country, addresses, and customer in separates caches slots.
+
+```javascript
+  .factory('Customer', function($cResource) {
+    return $cResource('/api/customers/:id', {id: '@id'}, {
+      get: {method:'GET', $cache:{
+        key: 'customer/:id',
+        split: {
+          'addresses': {
+            key: 'address/:id',
+            params: {'id': '@id'}
+          },
+          'addresses.country': {
+            key: 'country/:code',
+            params: {'code': '@code'}
+          },
+        }
+      }},
+    });
+  })
+```
+this example is equals to
+
+```javascript
+  .factory('Customer', function($cResource) {
+    return $cResource('/api/customers/:id', {id: '@id'}, {
+      get: {method:'GET', $cache:{
+        key: 'customer/:id',
+        split: {
+          'addresses': {
+            key: 'address/:id',
+            params: {'id': '@id'},
+            split: {
+              'country': {
+                key: 'country/:code',
+                params: {'code': '@code'}
+              },
+            }
+          }
+        }
+      }},
+    });
+  })
+```
+
+You're able to define a global prefix to the storageKey or change the ttl with the $cResourceConfig service
+
+```javascript
+angular.module('app', ['cResource'])
+  .run(function($cResourceConfig) {
+    $cResourceConfig.prefix = 'u/';
+    $cResourceConfig.ttl = 24 * 3600 * 1000; // 24 hours
+  })
+```
+
+Because $cResouce is a provider, you can change the default action's behaviours
+
+```javascript
+angular.module('app', ['cResource'])
+  .config(function($cResourceProvider) {
+    $cResourceProvider.defaults.actions.query.$cache = false;
+  })
+```
+
 
 ## License
 
