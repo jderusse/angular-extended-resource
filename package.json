@@ -1,0 +1,43 @@
+{
+  "name": "angular-extended-resource",
+  "version": "1.0.0",
+  "description": "An extended version of angular resource",
+  "main": "src/angular-extended-resource.js",
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-contrib-clean": "^0.5.0",
+    "grunt-contrib-copy": "^0.5.0",
+    "grunt-contrib-jshint": "^0.10.0",
+    "grunt-contrib-uglify": "^0.5.0",
+    "grunt-karma": "^0.8.3",
+    "jasmine-node": "^1.14.3",
+    "karma": "^0.12.16",
+    "karma-jasmine": "^0.1.5",
+    "karma-phantomjs-launcher": "^0.1.4",
+    "phantomjs": "^1.9.7-10"
+  },
+  "scripts": {
+    "test": "grunt test",
+    "build": "grunt dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jeremy-derusse/angular-extended-resource.git"
+  },
+  "keywords": [
+    "angular",
+    "cache",
+    "resource",
+    "localStorage"
+  ],
+  "author": "Jérémy Derussé <jeremy@derusse.com> (https://github.com/jeremy-derusse)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jeremy-derusse/angular-extended-resource/issues"
+  },
+  "homepage": "https://jeremy-derusse.github/angular-extended-resource"
+}
