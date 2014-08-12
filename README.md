@@ -56,34 +56,38 @@ app.factory('Customer', function($xResouce) {
 })
 ```
 
-** Easy isn't it? **
+Easy isn't it?
 
 ## Basic AccessPropery Usage
 
 ```javascript
-  .factory('Customer', function($xResouce) {
-    return $xResouce('/api/customers/:id', {id: '@id'}, {
-      'get':    {method:'GET', $accessProperty: 'customer'},
-      'query':  {method:'GET', $accessProperty: 'customers', isArray:true},
-      'save':   {method:'POST', $accessProperty: 'customer'},
-      'delete': {method:'DELETE'},
-    });
-  })
+.factory('Customer', function($xResouce) {
+  return $xResouce('/api/customers/:id', {id: '@id'}, {
+    'get':    {method:'GET', $accessProperty: 'customer'},
+    'query':  {method:'GET', $accessProperty: 'customers', isArray:true},
+    'save':   {method:'POST', $accessProperty: 'customer'},
+    'delete': {method:'DELETE'},
+  });
+})
 ```
+
+Advanced documentation on [dedicated project page](http://jeremy-derusse.github.io/angular-extended-resource)
 
 ## Basic Cache Usage
 
 ```javascript
-  .factory('Customer', function($xResouce) {
-    return $xResouce('/api/customers/:id', {id: '@id'}, {
-      'get':   {method:'GET', $cache: true},
-      'query': {method:'GET', $cache: false, isArray:true},
-    });
-  })
+.factory('Customer', function($xResouce) {
+  return $xResouce('/api/customers/:id', {id: '@id'}, {
+    'get':   {method:'GET', $cache: true},
+    'query': {method:'GET', $cache: false, isArray:true},
+  });
+})
 ```
 
+Advanced documentation on [dedicated project page](http://jeremy-derusse.github.io/angular-extended-resource)
+
 ## Author
-Jérémy Derussé, https://github.com/jeremy-derusse/angular-extended-resource
+Jérémy Derussé, https://github.com/jeremy-derusse
 
 ## Last Version
 v1.0.0
