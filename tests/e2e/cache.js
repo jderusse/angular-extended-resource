@@ -15,11 +15,10 @@ describe('A service using $xResource', function() {
       resource = Customer.query();
     });
 
-    it('should return a resource with cache metadata', function() {
+    it('should return a resource without cache metadata', function() {
       expect(resource).toBeDefined();
       expect(resource.$promise).toBeDefined();
-      expect(resource.$cache).toBeDefined();
-      expect(resource.$cache.stale).toBe(true);
+      expect(resource.$cache).toBeUndefined();
     });
   });
 
@@ -96,6 +95,10 @@ describe('A service using $xResource', function() {
       $httpBackend.verifyNoOutstandingRequest();
     });
 
+    it('should define $cache property', function() {
+      expect(resource.$cache).toBeDefined();
+      expect(resource.$cache.stale).toBe(false);
+    });
     it('should store data on localStorage', function() {
       expect($window.localStorage['/customers/123']).toBeDefined();
     });
