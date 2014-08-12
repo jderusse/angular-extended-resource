@@ -1,0 +1,25 @@
+{
+  "customer": {
+    "id": 2,
+    "name": "Foo",
+    "age": 20,
+    "addresses": [
+      {
+        "id": 1,
+        "street": "goo",
+        "country": {
+          "code": "fr",
+          "name": "france"
+        }
+      },
+      {
+        "id": 2,
+        "street": "bar",
+        "country": {
+          "code": "us",
+          "name": "United States"
+        }
+      }
+    ]
+  }
+}

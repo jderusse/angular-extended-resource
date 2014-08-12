@@ -1,0 +1,68 @@
+<html ng-app="app">
+<head>
+  <script src="../bower_components/angular/angular.js"></script>
+  <script src="../bower_components/angular-resource/angular-resource.js"></script>
+  <script src="app.js"></script>
+  <script src="../dist/angular-extended-resource.min.js"></script>
+  <style type="text/css">
+  .stale {
+    color: gray;
+  }
+
+  PRE {
+    background: #DDD;
+    padding: 5px;
+    border-radius: 5px;
+    white-space: pre-wrap;
+  }
+  </style>
+</head>
+<body>
+  <div ng-controller="foo">
+    <h2>Authenticated User</h2>
+    {{ user.id }} {{ user.name }}
+    <pre>{{ user }}</pre>
+
+    <h2>List of customers</h2>
+    <div ng-class="{stale: customers.$cache.stale}">
+      <ul>
+        <li ng-repeat="customer in customers">
+          {{ customer.id }} {{ customer.name }}
+          <ul>
+            <li ng-repeat="address in customer.addresses">
+              {{ address.id }} {{ address.street }} [{{ address.country.code }} - {{ address.country.name }}]
+            </li>
+          </ul>
+        </li>
+      </ul>
+      <pre>{{ customers }}</pre>
+    </div>
+
+    <h2>Customers #2</h2>
+    <div ng-class="{stale: customer2.$cache.stale}">
+      {{ customer2.id }} {{ customer2.name }}
+      <ul>
+        <li ng-repeat="address in customer2.addresses">
+          {{ address.id }} {{ address.street }} [{{ address.country.code }} - {{ address.country.name }}]
+        </li>
+      </ul>
+      <pre>{{ customer2 }}</pre>
+    </div>
+
+    <h2>Customers #5</h2>
+    <i>Does not exist in fixtures. Resource should handle a 404 response. Resourec stay stale</i>
+    <div ng-class="{stale: customer5.$cache.stale}">
+      {{ customer5.id }} {{ customer5.name }}
+      <ul>
+        <li ng-repeat="address in customer5.addresses">
+          {{ address.id }} {{ address.street }} [{{ address.country.code }} - {{ address.country.name }}]
+        </li>
+      </ul>
+      <pre>{{ customer5 }}</pre>
+    </div>
+
+    <h2>LocalStorage</h2>
+    <pre ng-repeat="(key, value) in localStorage">{{ key }} {{ value }}</pre>
+  </div>
+</body>
+</html>
