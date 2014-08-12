@@ -39,23 +39,10 @@ module.exports = function(grunt) {
     },
 
 
-    preprocess: {
-      build: {
-        src: 'README.md',
-        dest: '<%= conf.dest %>/README.md',
-        options: {
-          context: {
-            name: '<%= pkg.name %>',
-            version: '<%= pkg.version %>',
-          }
-        }
-      }
-    },
-
-
     copy: {
       build: {
         src: [
+          './README.md',
           './LICENSE',
           './bower.json',
         ],
@@ -86,10 +73,9 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-copy');
-  grunt.loadNpmTasks('grunt-preprocess');
   grunt.loadNpmTasks('grunt-karma');
   
-  grunt.registerTask('dist', ['clean', 'jshint', 'copy', 'preprocess', 'uglify:original', 'uglify:minimized']);
+  grunt.registerTask('dist', ['clean', 'jshint', 'copy', 'uglify:original', 'uglify:minimized']);
   grunt.registerTask('test', ['dist', 'karma']);
 
   grunt.registerTask('default', ['dist']);
