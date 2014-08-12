@@ -1,4 +1,4 @@
-# angular-extended-resource
+# <!-- @echo name -->
 
 ## Description
 
@@ -17,13 +17,13 @@ The diference with the `cache` option are:
 Install with `bower`:
 
 ```shell
-bower install angular-extended-resource
+bower install <!-- @echo name -->
 ```
 
 Add a `<script>` to your `index.html`:
 
 ```html
-<script src="/bower_components/angular-extended-resource/dist/angular-extended-resource.js"></script>
+<script src="/bower_components/<!-- @echo name -->/<!-- @echo name -->.js"></script>
 ```
 
 And add `exResource` as a dependency for your app:
@@ -404,11 +404,8 @@ the same storageKey
 ## Author
 Jérémy Derussé, https://github.com/jeremy-derusse/angular-extended-resource
 
-## Date
-2014-08-10
-
-## Module Version
-1.0.0
+## Last Version
+<!-- @echo version -->
 
 ## Contributors
 
