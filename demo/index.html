@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html ng-app="app">
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="../stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="../stylesheets/pygment_trac.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="../stylesheets/print.css" media="print">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <script src="../javascripts/angular.min.js"></script>
+    <script src="../javascripts/angular-resource.min.js"></script>
+    <script src="../javascripts/angular-extended-resource.min.js"></script>
+    <script src="app.js"></script>
+    <style type="text/css">
+    .stale {
+      color: gray;
+    }
+    pre {
+      white-space: pre-wrap;
+    }
+
+    </style>
+    <title>angular-extended-resource</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>angular-extended-resource</h1>
+          <h2>An extended version of angular resource.</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/jeremy-derusse/angular-extended-resource/tree/gh-pages/demo" class="button"><span>Source code</span></a>
+          <a href="https://github.com/jeremy-derusse/angular-extended-resource/tarball/bower" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/jeremy-derusse/angular-extended-resource" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content" ng-controller="demo">
+
+  <h2>Authenticated User</h2>
+  {{ user.id }} {{ user.name }}
+  <pre><code>{{ user }}</code></pre>
+
+  <h2>List of customers</h2>
+  <div ng-class="{stale: customers.$cache.stale}">
+    <ul>
+      <li ng-repeat="customer in customers">
+        {{ customer.id }} {{ customer.name }}
+        <ul>
+          <li ng-repeat="address in customer.addresses">
+            {{ address.id }} {{ address.street }} [{{ address.country.code }} - {{ address.country.name }}]
+          </li>
+        </ul>
+      </li>
+    </ul>
+    <pre><code>{{ customers }}</code></pre>
+  </div>
+
+  <h2>Customers #2</h2>
+  <div ng-class="{stale: customer2.$cache.stale}">
+    {{ customer2.id }} {{ customer2.name }}
+    <ul>
+      <li ng-repeat="address in customer2.addresses">
+        {{ address.id }} {{ address.street }} [{{ address.country.code }} - {{ address.country.name }}]
+      </li>
+    </ul>
+    <pre><code>{{ customer2 }}</code></pre>
+  </div>
+
+  <h2>Customers #5</h2>
+  <i>Does not exist in fixtures. Resource should handle a 404 response. Resource stay stale</i>
+  <div ng-class="{stale: customer5.$cache.stale}">
+    {{ customer5.id }} {{ customer5.name }}
+    <ul>
+      <li ng-repeat="address in customer5.addresses">
+        {{ address.id }} {{ address.street }} [{{ address.country.code }} - {{ address.country.name }}]
+      </li>
+    </ul>
+    <pre><code>{{ customer5 }}</code></pre>
+  </div>
+
+  <h2>Customers #6</h2>
+  <i>Does not exist in fixtures neither in cache. Resource is not stale</i>
+  <div ng-class="{stale: customer6.$cache.stale}">
+    {{ customer6.id }} {{ customer6.name }}
+    <ul>
+      <li ng-repeat="address in customer6.addresses">
+        {{ address.id }} {{ address.street }} [{{ address.country.code }} - {{ address.country.name }}]
+      </li>
+    </ul>
+    <pre><code>{{ customer6 }}</code></pre>
+  </div>
+
+  <h2>LocalStorage</h2>
+  <pre><code ng-repeat="(key, value) in localStorage">{{ key }} {{ value }}</code></pre>
+</div>
+
+
+        </section>
+
+        <footer>
+          Angular-extended-resource is maintained by <a href="https://github.com/jeremy-derusse">jeremy-derusse</a><br>
+        </footer>
+      </div>
+    </div>
+  </body>
+</html>

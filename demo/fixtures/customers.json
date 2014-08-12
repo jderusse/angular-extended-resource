@@ -1,0 +1,51 @@
+{
+  "customers": [
+    {
+      "id": 2,
+      "name": "Foo",
+      "age": 20,
+      "addresses": [
+        {
+          "id": 1,
+          "street": "Paris",
+          "country": {
+            "code": "fr",
+            "name": "france"
+          }
+        },
+        {
+          "id": 2,
+          "street": "New York",
+          "country": {
+            "code": "us",
+            "name": "United States"
+          }
+        }
+      ]
+    }
+    ,
+    {
+      "id": 5,
+      "name": "Bar",
+      "age": 20,
+      "addresses": [
+        {
+          "id": 1,
+          "street": "Paris",
+          "country": {
+            "code": "fr",
+            "name": "france"
+          }
+        },
+        {
+          "id": 3,
+          "street": "Chicago",
+          "country": {
+            "code": "us",
+            "name": "United States"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -10,7 +10,7 @@
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <title>Angular-extended-resource by jeremy-derusse</title>
+    <title>angular-extended-resource</title>
   </head>
 
   <body>
@@ -18,58 +18,394 @@
       <div class="inner">
 
         <header>
-          <h1>Angular-extended-resource</h1>
-          <h2>An extended version of angular resource. store responses into localStorage.</h2>
+          <h1>angular-extended-resource</h1>
+          <h2>An extended version of angular resource.</h2>
         </header>
 
         <section id="downloads" class="clearfix">
-          <a href="https://github.com/jeremy-derusse/angular-extended-resource/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
-          <a href="https://github.com/jeremy-derusse/angular-extended-resource/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="./demo/index.html" class="button"><span>Show Demo</span></a>
+          <a href="https://github.com/jeremy-derusse/angular-extended-resource/tarball/bower" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
           <a href="https://github.com/jeremy-derusse/angular-extended-resource" id="view-on-github" class="button"><span>View on GitHub</span></a>
         </section>
 
         <hr>
 
         <section id="main_content">
-          <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<h3><a name="description" class="anchor" href="#description"><span class="octicon octicon-link"></span></a>Description</h3>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
+<p>Angular extended resource is a wrapper for <a href="https://github.com/angular/angular.js/tree/master/src/ngResource">Angular ngResouce</a>
+It provide a simple way to fetch resource from localStorage to provide a quick "stale" response, and let the original
+resource fetching data from real API. And to extract responses from a sub object:</p>
+<p>The diference with the existing <code>cache</code> option are:</p>
+<ul>
+  <li>the promise is not canceled</li>
+  <li>and data are stored in localStorage instead of memory.</li>
+</ul>
+
+<h3><a name="install" class="anchor" href="#install"><span class="octicon octicon-link"></span></a>Install</h3>
+
+<p>Install with <code>bower</code>:</p>
+<pre><code>$ bower install angular-extended-resource
 </code></pre>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<p>Add a <code>&lt;script&gt;</code> to your <code>index.html</code>:</p>
+<pre><code>&lt;script src="/bower_components/angular-extended-resource/angular-extended-resource.js"&gt;&lt;/script&gt;
+</code></pre>
 
-<h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+<p>And add <code>exResource</code> as a dependency for your app:</p>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+<pre><code>angular.module('myApp', ['exResource']);
+</code></pre>
 
-<h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
+<h3><a name="difference" class="anchor" href="#difference"><span class="octicon octicon-link"></span></a>Differences with angular-resource</h3>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<pre><code>// angular resource
+angular.module('myApp', ['ngResource']);
 
-<h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+// angular extended resource
+angular.module('myApp', ['exResource']);
+</code></pre>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<pre><code>// angular resource
+app.factory('Customer', function($resource) {
+  return $resource('/api/customers/:id', {id: '@id'});
+})
 
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
+// angular extended resource
+app.factory('Customer', function($xResouce) {
+  return $xResouce('/api/customers/:id', {id: '@id'});
+})
+</code></pre>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<b>Easy isn't it?</b>
+
+<h3><a name="accessproperty-documentation" class="anchor" href="#accessproperty-documentation"><span class="octicon octicon-link"></span></a>AccessProperty documentation</h3>
+
+<p>Some browsers can not handle a JSON response with an array on toplevel. Rest service commonly wrap the resonse inside an object</p>
+<pre><code>// bad
+[
+    {
+        "id": 1,
+        "name": "foo"
+    },
+    {
+        "id": 2,
+        "name": "bar"
+    }
+]
+
+// good
+{
+    "customers": [
+        {
+            "id": 1,
+            "name": "foo"
+        },
+        {
+            "id": 2,
+            "name": "bar"
+        }
+    ]
+}
+</code></pre>
+
+<strong>First, read the documentation of <a href="http://docs.angularjs.org/api/ngResource">angular resource</a></strong>
+
+<p>Then, angular extended resource add a <code>$accessProperty</code> property to each actions. When defined, the response will be parsed an object with a toplevel property
+equals to the value of <code>$accessProperty</code> will be expected. The content of this property will be return as resource. If not, a error will be logged in the
+console</p>
+
+<pre><code>.factory('Customer', function($xResouce) {
+  return $xResouce('/api/customers/:id', {id: '@id'}, {
+    'get':    {method:'GET', $accessProperty: 'customer'},
+    'query':  {method:'GET', $accessProperty: 'customers', isArray:true},
+    'save':   {method:'POST', $accessProperty: 'customer'},
+    'delete': {method:'DELETE'},
+  });
+})
+</code></pre>
+
+<p>This config will expect the following responses</p>
+
+<pre><code>GET /customers
+{
+    "customers": [
+        {
+            "id": 1,
+            "name": "foo"
+        },
+        {
+            "id": 2,
+            "name": "bar"
+        }
+    ]
+}
+
+GET /customers/1
+{
+    "customer": {
+        "id": 1,
+        "name": "foo"
+    }
+}
+</code></pre>
+
+<p>and ngRessource will process the response as it was:</p>
+
+<pre><code>GET /customers
+[
+    {
+        "id": 1,
+        "name": "foo"
+    },
+    {
+        "id": 2,
+        "name": "bar"
+    }
+]
+
+GET /customers/1
+{
+    "id": 1,
+    "name": "foo"
+}
+</code></pre>
+
+
+<h3><a name="cache-documentation" class="anchor" href="#cache-documentation"><span class="octicon octicon-link"></span></a>Cache documentation</h3>
+
+<strong>First, read the documentation of <a href="http://docs.angularjs.org/api/ngResource">angular resource</a></strong>
+
+<p>Then, angular extended resource add a <code>$cached</code> property to each actions. When <code>$cache</code> is a boolean or a string, it's an alias for <code>$cache: {key: ...}</code>
+This property is an object containing contains:</p>
+<ul>
+  <li>key: (boolean, string or function) name of the storageKey
+    <ul>
+      <li>When false, the cache will not be used</li>
+      <li>When true, The response will be cached with a storageKey equals to the URL of the resource (** beware of your filters **)</li>
+      <li>When string, The response will be cached with this string as storageKey. As for URL, you can use the sames placeHolders</li>
+      <li>When function, The response will be cached under a key evaluated by a call to the function.</li>
+    </ul>
+  </li>
+  <li>params: (object) List of defaults params and mapping between placeHolders and property in object</li>
+  <li>split: (object) Configuration for spliting the resource. This object contains dynamics properties.
+    <ul>
+      <li>The property is the path to the subresource.</li>
+      <li>The value is the cache configuration for the subrsource. It format is identical to $cache (it's recurcive)</li>
+    </ul>
+  </li>
+</ul>
+
+<p>Example:</p>
+
+<pre><code>.factory('Customer', function($xResouce) {
+  return $xResouce('/api/customers/:id', {id: '@id'}, {
+    'get':   {method:'GET', $cache: true},
+    'query': {method:'GET', $cache: false, isArray:true},
+  });
+})
+</code></pre>
+
+<pre><code>.factory('Customer', function($xResouce) {
+  return $xResouce('/api/customers/:id', {id: '@id'}, {
+    'get':   {method:'GET', $cache: {key: function(parameters) {return 'customer/' + parameters.id}}},
+    'query': {method:'GET', $cache: {key: true, split: {'': {key:'customer/:customerId', params:{customerId:'@id'}}}, isArray:true},
+  });
+})
+</code></pre>
+
+<p>The response returned by angular cache resource contains a <code>$cache</code> property. This property is an object containing:</p>
+<ul>
+  <li>updated: Date where the resource fetch from the API for the last time</li>
+  <li>stale: When true, the properties of the resource came from cache. Otherwise it has been fetch from API.</li>
+</ul>
+
+<p>Because the <code>stale</code> sub-property is updated when the API respond and when the object is updated with fresh data, it
+let you define a custom class to inform the users, that the resource is not fully loaded.</p>
+
+<pre><code>&lt;style type="text/css"&gt;
+.stale-resource {
+  color: gray;
+}
+&lt;/style&gt;
+...
+&lt;div ng-class="{'stale-resource': resource.$cache.stale}"&gt;{{ resource }}&lt;/div&gt;
+</code></pre>
+
+<p>If the resource of your API is complex and some parts are used by many other resources, you can split and share this
+resource. This will reduce the size of each resource.</p>
+
+<p>Her is sample of response of <code>GET /api/customer/2</code></p>
+<pre><code>{
+  "id": 2,
+  "name": "John Doe",
+  "addresses": [
+    {
+      "id": 1,
+      "street": "foo",
+      "country": {
+        "code": "fr",
+        "name": "france"
+      }
+    },
+    {
+      "id": 2,
+      "street": "bar",
+      "country": {
+        "code": "fr",
+        "name": "france"
+      }
+    }
+  ]
+}
+</code></pre>
+
+<p>It could be interested to store countries in a separate localStorage to reduce size of the resource.</p>
+<pre><code>.factory('Customer', function($xResouce) {
+  return $xResouce('/api/customers/:id', {id: '@id'}, {
+    get: {method:'GET', $cache:{
+      key: 'customer/:id',        // Customer will be store in localStorage under key customer/:customerId
+      split: {                    // Lets split the customer object
+        'addresses.country': {    // Split each country of each addresses of the resource
+          key: 'country/:id',     // Store this part in cache under key country/:id
+          params: {'id': '@code'} // As for placeholders in url, id refere to the @code property in the subObject Country
+        }
+      }
+    }}
+  });
+})
+</code></pre>
+
+<p>You can define as many split as you want et you can split nestead objects. The following sample will store country,
+addresses, and customer in separates caches slots.</p>
+<pre><code>.factory('Customer', function($xResouce) {
+  return $xResouce('/api/customers/:id', {id: '@id'}, {
+    get: {method:'GET', $cache:{
+      key: 'customer/:id',
+      split: {
+        'addresses': {
+          key: 'address/:id',
+          params: {'id': '@id'}
+        },
+        'addresses.country': {
+          key: 'country/:code',
+          params: {'code': '@code'}
+        },
+      }
+    }},
+  });
+})
+</code></pre>
+
+<p>this example is equals to:</p>
+<pre><code>.factory('Customer', function($xResouce) {
+  return $xResouce('/api/customers/:id', {id: '@id'}, {
+    get: {method:'GET', $cache:{
+      key: 'customer/:id',
+      split: {
+        'addresses': {
+          key: 'address/:id',
+          params: {'id': '@id'},
+          split: {
+            'country': {
+              key: 'country/:code',
+              params: {'code': '@code'}
+            },
+          }
+        }
+      }
+    }},
+  });
+})
+</code></pre>
+
+<p>Each stored resource will be automatically removed when there life time will extends the configured TTL. You're able
+to define a global prefix to the storageKey or change the ttl with the $xResouceConfig service</p>
+<pre><code>angular.module('app', ['cResource'])
+  .run(function($xResouceConfig, myAuthService) {
+    $xResouceConfig.prefix = 'u/' + myAuthService.user.id + '/';
+    $xResouceConfig.ttl = 24 * 3600 * 1000; // 24 hours
+  })
+</code></pre>
+
+<p>Because $xResouce is a provider, you can change the default action's behaviors</p>
+<pre><code>angular.module('app', ['cResource'])
+  .config(function($xResouceProvider) {
+    $xResouceProvider.defaults.actions.query.$cache = false;
+  })
+</code></pre>
+
+<p>In split resources, you can use identifiers of parents to compose the key.</p>
+<pre><code>.factory('Customer', function($xResouce) {
+  return $xResouce('/api/customers/:id', {id: '@id'}, {
+    get: {method:'GET', $cache:{
+      key: 'customer/:customerId',
+      params: {customerId: '@id'}
+      split: {
+        'addresses': {
+          key: 'customer/:customerId/address/:addressId',
+          params: {'addressId': '@id'},
+        }
+      }
+    }},
+  });
+})
+</code></pre>
+
+<p>If your resources and sub resources use the same property name as identifier (like <code>id</code> or <code>uuid</code>) don't forget to
+specify a different mapping name or specify a new params mapping. Otherwise, all your resources will be merged under
+the same storageKey</p>
+<pre><code>// bad
+.factory('Customer', function($xResouce) {
+  return $xResouce('/api/customers/:id', {id: '@id'}, {
+    get: {method:'GET', $cache:{
+      key: 'customer/:id',
+      split: {
+        'addresses': {
+          key: 'address/:id', // :id is a reference Customer's {id: '@id'} defined near URL definition
+        }
+      }
+    }},
+  });
+})
+
+// good
+.factory('Customer', function($xResouce) {
+  return $xResouce('/api/customers/:id', {id: '@id'}, {
+    get: {method:'GET', $cache:{
+      key: 'customer/:id',
+      split: {
+        'addresses': {
+          key: 'address/:id',  // :id is a reference Address's {id: '@id'} defined next line
+          params: {id; '@id'}
+        }
+      }
+    }},
+  });
+
+// good
+.factory('Customer', function($xResouce) {
+  return $xResouce('/api/customers/:id', {id: '@id'}, {
+    get: {method:'GET', $cache:{
+      key: 'customer/:customerId',
+      params: {customerId; '@id'}
+      split: {
+        'addresses': {
+          key: 'address/:addressId',
+          params: {addressId; '@id'}
+        }
+      }
+    }},
+  });
+})
+</code></pre>
+
         </section>
 
         <footer>
           Angular-extended-resource is maintained by <a href="https://github.com/jeremy-derusse">jeremy-derusse</a><br>
-          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
         </footer>
-
-        
       </div>
     </div>
   </body>
