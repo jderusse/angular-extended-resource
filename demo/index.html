@@ -1,55 +1,97 @@
 <!DOCTYPE html>
 <html ng-app="app">
-  <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="../stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="../stylesheets/pygment_trac.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="../stylesheets/print.css" media="print">
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <script src="../javascripts/angular.min.js"></script>
-    <script src="../javascripts/angular-resource.min.js"></script>
-    <script src="../javascripts/angular-extended-resource.min.js"></script>
-    <script src="app.js"></script>
-    <style type="text/css">
-    .stale {
-      color: gray;
-    }
-    pre {
-      white-space: pre-wrap;
-    }
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    </style>
-    <title>angular-extended-resource</title>
-  </head>
+  <link rel="stylesheet" type="text/css" href="../bower_components/bootstrap/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="../css/main.css">
+  <link rel="stylesheet" type="text/css" href="../css/prism.css">
+  <!--[if lt IE 9]>
+  <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+  <script src="../bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="../bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="../bower_components/angular/angular.min.js"></script>
+  <script src="../bower_components/angular-resource/angular-resource.min.js"></script>
+  <script src="../bower_components/angular-extended-resource/angular-extended-resource.min.js"></script>
+  <script src="../js/prism.js"></script>
+  <script src="app.js"></script>
+  <title>angular-extended-resource</title>
+</head>
 
-  <body>
-    <div id="container">
-      <div class="inner">
+<body>
+  <div class="navbar navbar-fixed-top navbar-default" role="navigation">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="/angular-extended-resource">angular-extended-resource</a>
+      </div>
 
-        <header>
-          <h1>angular-extended-resource</h1>
-          <h2>An extended version of angular resource.</h2>
-        </header>
+      <div class="navbar-collapse collapse">
+        <ul class="nav navbar-nav">
+          <li><a href="/angular-extended-resource">Documentation</a></li>
+          <li class="active"><a href="/angular-extended-resource/demo">Demo</a></li>
+          <li><a href="https://github.com/jeremy-derusse/angular-extended-resource">View on GitHub</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
 
-        <section id="downloads" class="clearfix">
-          <a href="https://github.com/jeremy-derusse/angular-extended-resource/tree/gh-pages/demo" class="button"><span>Source code</span></a>
-          <a href="https://github.com/jeremy-derusse/angular-extended-resource/tarball/bower" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
-          <a href="https://github.com/jeremy-derusse/angular-extended-resource" id="view-on-github" class="button"><span>View on GitHub</span></a>
-        </section>
+  <div class="jumbotron">
+    <div class="container" ng-controller="demo">
+      <h1>angular-extended-resource</h1>
+      <p>An extended version of angular resource.</p>
+    </div>
+  </div>
+  <div class="container" ng-controller="demo">
 
-        <hr>
 
-        <section id="main_content" ng-controller="demo">
+  <h2>app.js</h2>
+  <pre><code class="language-javascript">angular.module('app', ['exResource'])
+  .controller('demo', function($scope, $window, $xResourceConfig, Customer, User) {
+    $scope.user = User.get({id: 123});
+    $scope.user.$promise.then(function(user) {
+      $xResourceConfig.prefix = 'u/' + user.id + '/';
+      $scope.customers = Customer.query();
+      $scope.customer2 = Customer.get({id: 2});
+      $scope.customer5 = Customer.get({id: 5});
+      $scope.customer6 = Customer.get({id: 6});
+    });
+    $scope.localStorage = $window.localStorage;
+  })
+  .factory('Customer', function($xResource) {
+    var cacheConfig = {
+      key: 'customer/:id',
+      split: {
+        'addresses': {
+          key: 'customer/:id/address/:addressId',
+          params: {'addressId': '@id'}
+        },
+        'addresses.country': {
+          key: 'country/:code',
+          params: {'code': '@code'}
+        },
+      }
+    };
+    return $xResource('./fixtures/customers/:id.json', {id: '@id'}, {
+      get: {method:'GET', $accessProperty: 'customer', $cache: cacheConfig},
+      query: {method:'GET', isArray: true, $accessProperty: 'customers', $cache:{key: 'customers', split: cacheConfig}}
+    });
+  })
+  .factory('User', function($xResource) {
+    return $xResource('./fixtures/users/:id.json', {id: '@id'}, {
+      get: {method: 'GET', $accessProperty: 'user'}
+    });
+  });</code></pre>
 
-  <h2>Authenticated User</h2>
-  {{ user.id }} {{ user.name }}
-  <pre><code>{{ user }}</code></pre>
-
-  <h2>List of customers</h2>
+  <h2>$scope.customers</h2>
   <div ng-class="{stale: customers.$cache.stale}">
     <ul>
       <li ng-repeat="customer in customers">
@@ -61,10 +103,13 @@
         </ul>
       </li>
     </ul>
-    <pre><code>{{ customers }}</code></pre>
+    <div class="row">
+      <label class="col-sm-1">cache</label>
+      <pre class="col-sm-11"><code>{{ customers.$cache }}</code></pre>
+    </div>
   </div>
 
-  <h2>Customers #2</h2>
+  <h2>$scope.customers2</h2>
   <div ng-class="{stale: customer2.$cache.stale}">
     {{ customer2.id }} {{ customer2.name }}
     <ul>
@@ -72,10 +117,13 @@
         {{ address.id }} {{ address.street }} [{{ address.country.code }} - {{ address.country.name }}]
       </li>
     </ul>
-    <pre><code>{{ customer2 }}</code></pre>
+    <div class="row">
+      <label class="col-sm-1">cache</label>
+      <pre class="col-sm-11"><code>{{ customer2.$cache }}</code></pre>
+    </div>
   </div>
 
-  <h2>Customers #5</h2>
+  <h2>$scope.customers5</h2>
   <i>Does not exist in fixtures. Resource should handle a 404 response. Resource stay stale</i>
   <div ng-class="{stale: customer5.$cache.stale}">
     {{ customer5.id }} {{ customer5.name }}
@@ -84,10 +132,13 @@
         {{ address.id }} {{ address.street }} [{{ address.country.code }} - {{ address.country.name }}]
       </li>
     </ul>
-    <pre><code>{{ customer5 }}</code></pre>
+    <div class="row">
+      <label class="col-sm-1">cache</label>
+      <pre class="col-sm-11"><code>{{ customer5.$cache }}</code></pre>
+    </div>
   </div>
 
-  <h2>Customers #6</h2>
+  <h2>$scope.customers6</h2>
   <i>Does not exist in fixtures neither in cache. Resource is not stale</i>
   <div ng-class="{stale: customer6.$cache.stale}">
     {{ customer6.id }} {{ customer6.name }}
@@ -96,20 +147,29 @@
         {{ address.id }} {{ address.street }} [{{ address.country.code }} - {{ address.country.name }}]
       </li>
     </ul>
-    <pre><code>{{ customer6 }}</code></pre>
+    <div class="row">
+      <label class="col-sm-1">cache</label>
+      <pre class="col-sm-11"><code>{{ customer6.$cache }}</code></pre>
+    </div>
   </div>
 
   <h2>LocalStorage</h2>
-  <pre ng-repeat="(key, value) in localStorage"><code>{{ key }}
-{{ value }}
-</code></pre>
+  <table class="table table-bordered table-striped">
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr ng-repeat="(key, value) in localStorage">
+      <td>{{ key }}</td>
+      <td>{{ value }}</td>
+    </tr>
+  </tbody>
+  </table>
 
-        </section>
-
-        <footer>
-          Angular-extended-resource is maintained by <a href="https://github.com/jeremy-derusse">jeremy-derusse</a><br>
-        </footer>
-      </div>
     </div>
-  </body>
+
+</body>
 </html>

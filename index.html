@@ -1,38 +1,55 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <title>angular-extended-resource</title>
-  </head>
+<html ng-app="app">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <body>
-    <div id="container">
-      <div class="inner">
+  <link rel="stylesheet" type="text/css" href="bower_components/bootstrap/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="css/main.css">
+  <link rel="stylesheet" type="text/css" href="css/prism.css">
+  <!--[if lt IE 9]>
+  <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+  <script src="bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="js/prism.js"></script>
+  <title>angular-extended-resource</title>
+</head>
 
-        <header>
-          <h1>angular-extended-resource</h1>
-          <h2>An extended version of angular resource.</h2>
-        </header>
+<body>
+  <div class="navbar navbar-fixed-top navbar-default" role="navigation">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="/angular-extended-resource">angular-extended-resource</a>
+      </div>
 
-        <section id="downloads" class="clearfix">
-          <a href="./demo/index.html" class="button"><span>Show Demo</span></a>
-          <a href="https://github.com/jeremy-derusse/angular-extended-resource/tarball/bower" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
-          <a href="https://github.com/jeremy-derusse/angular-extended-resource" id="view-on-github" class="button"><span>View on GitHub</span></a>
-        </section>
+      <div class="navbar-collapse collapse">
+        <ul class="nav navbar-nav">
+          <li class="active"><a href="/angular-extended-resource">Documentation</a></li>
+          <li><a href="/angular-extended-resource/demo">Demo</a></li>
+          <li><a href="https://github.com/jeremy-derusse/angular-extended-resource">View on GitHub</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
 
-        <hr>
+  <div class="jumbotron">
+    <div class="container" ng-controller="demo">
+      <h1>angular-extended-resource</h1>
+      <p>An extended version of angular resource.</p>
+    </div>
+  </div>
 
-        <section id="main_content">
+  <div class="container" ng-controller="demo">
 
-<h3><a name="description" class="anchor" href="#description"><span class="octicon octicon-link"></span></a>Description</h3>
+<h3 class="page-header">Description</h3>
 
 <p>Angular extended resource is a wrapper for <a href="https://github.com/angular/angular.js/tree/master/src/ngResource">Angular ngResouce</a>
 It provide a simple way to fetch resource from localStorage to provide a quick "stale" response, and let the original
@@ -43,31 +60,31 @@ resource fetching data from real API. And to extract responses from a sub object
   <li>and data are stored in localStorage instead of memory.</li>
 </ul>
 
-<h3><a name="install" class="anchor" href="#install"><span class="octicon octicon-link"></span></a>Install</h3>
+<h3 class="page-header">Install</h3>
 
 <p>Install with <code>bower</code>:</p>
-<pre><code>$ bower install angular-extended-resource
+<pre><code class="language-bash">$ bower install angular-extended-resource
 </code></pre>
 
 <p>Add a <code>&lt;script&gt;</code> to your <code>index.html</code>:</p>
-<pre><code>&lt;script src="/bower_components/angular-extended-resource/angular-extended-resource.js"&gt;&lt;/script&gt;
+<pre><code class="language-markup">&lt;script src="/bower_components/angular-extended-resource/angular-extended-resource.js"&gt;&lt;/script&gt;
 </code></pre>
 
 <p>And add <code>exResource</code> as a dependency for your app:</p>
 
-<pre><code>angular.module('myApp', ['exResource']);
+<pre><code class="language-javascript">angular.module('myApp', ['exResource']);
 </code></pre>
 
-<h3><a name="difference" class="anchor" href="#difference"><span class="octicon octicon-link"></span></a>Differences with angular-resource</h3>
+<h3 class="page-header">Differences with angular-resource</h3>
 
-<pre><code>// angular resource
+<pre><code class="language-javascript">// angular resource
 angular.module('myApp', ['ngResource']);
 
 // angular extended resource
 angular.module('myApp', ['exResource']);
 </code></pre>
 
-<pre><code>// angular resource
+<pre><code class="language-javascript">// angular resource
 app.factory('Customer', function($resource) {
   return $resource('/api/customers/:id', {id: '@id'});
 })
@@ -80,33 +97,33 @@ app.factory('Customer', function($xResouce) {
 
 <b>Easy isn't it?</b>
 
-<h3><a name="accessproperty-documentation" class="anchor" href="#accessproperty-documentation"><span class="octicon octicon-link"></span></a>AccessProperty documentation</h3>
+<h3 class="page-header">AccessProperty documentation</h3>
 
 <p>Some browsers can not handle a JSON response with an array on toplevel. Rest service commonly wrap the resonse inside an object</p>
-<pre><code>// bad
+<pre><code class="language-javascript">// bad
 [
-    {
-        "id": 1,
-        "name": "foo"
-    },
-    {
-        "id": 2,
-        "name": "bar"
-    }
+  {
+    "id": 1,
+    "name": "foo"
+  },
+  {
+    "id": 2,
+    "name": "bar"
+  }
 ]
 
 // good
 {
-    "customers": [
-        {
-            "id": 1,
-            "name": "foo"
-        },
-        {
-            "id": 2,
-            "name": "bar"
-        }
-    ]
+  "customers": [
+    {
+      "id": 1,
+      "name": "foo"
+    },
+    {
+      "id": 2,
+      "name": "bar"
+    }
+  ]
 }
 </code></pre>
 
@@ -116,7 +133,7 @@ app.factory('Customer', function($xResouce) {
 equals to the value of <code>$accessProperty</code> will be expected. The content of this property will be return as resource. If not, a error will be logged in the
 console</p>
 
-<pre><code>.factory('Customer', function($xResouce) {
+<pre><code class="language-javascript">.factory('Customer', function($xResouce) {
   return $xResouce('/api/customers/:id', {id: '@id'}, {
     'get':    {method:'GET', $accessProperty: 'customer'},
     'query':  {method:'GET', $accessProperty: 'customers', isArray:true},
@@ -128,21 +145,21 @@ console</p>
 
 <p>This config will expect the following responses</p>
 
-<pre><code>GET /customers
+<pre><code class="language-javascript">// GET /customers
 {
-    "customers": [
-        {
-            "id": 1,
-            "name": "foo"
-        },
-        {
-            "id": 2,
-            "name": "bar"
-        }
-    ]
+  "customers": [
+    {
+      "id": 1,
+      "name": "foo"
+    },
+    {
+      "id": 2,
+      "name": "bar"
+    }
+  ]
 }
 
-GET /customers/1
+// GET /customers/1
 {
     "customer": {
         "id": 1,
@@ -153,19 +170,19 @@ GET /customers/1
 
 <p>and ngRessource will process the response as it was:</p>
 
-<pre><code>GET /customers
+<pre><code class="language-javascript">// GET /customers
 [
-    {
-        "id": 1,
-        "name": "foo"
-    },
-    {
-        "id": 2,
-        "name": "bar"
-    }
+  {
+    "id": 1,
+    "name": "foo"
+  },
+  {
+    "id": 2,
+    "name": "bar"
+  }
 ]
 
-GET /customers/1
+// GET /customers/1
 {
     "id": 1,
     "name": "foo"
@@ -173,7 +190,7 @@ GET /customers/1
 </code></pre>
 
 
-<h3><a name="cache-documentation" class="anchor" href="#cache-documentation"><span class="octicon octicon-link"></span></a>Cache documentation</h3>
+<h3 class="page-header">Cache documentation</h3>
 
 <strong>First, read the documentation of <a href="http://docs.angularjs.org/api/ngResource">angular resource</a></strong>
 
@@ -199,7 +216,7 @@ This property is an object containing contains:</p>
 
 <p>Example:</p>
 
-<pre><code>.factory('Customer', function($xResouce) {
+<pre><code class="language-javascript">.factory('Customer', function($xResouce) {
   return $xResouce('/api/customers/:id', {id: '@id'}, {
     'get':   {method:'GET', $cache: true},
     'query': {method:'GET', $cache: false, isArray:true},
@@ -207,7 +224,7 @@ This property is an object containing contains:</p>
 })
 </code></pre>
 
-<pre><code>.factory('Customer', function($xResouce) {
+<pre><code class="language-javascript">.factory('Customer', function($xResouce) {
   return $xResouce('/api/customers/:id', {id: '@id'}, {
     'get':   {method:'GET', $cache: {key: function(parameters) {return 'customer/' + parameters.id}}},
     'query': {method:'GET', $cache: {key: true, split: {'': {key:'customer/:customerId', params:{customerId:'@id'}}}, isArray:true},
@@ -224,7 +241,7 @@ This property is an object containing contains:</p>
 <p>Because the <code>stale</code> sub-property is updated when the API respond and when the object is updated with fresh data, it
 let you define a custom class to inform the users, that the resource is not fully loaded.</p>
 
-<pre><code>&lt;style type="text/css"&gt;
+<pre><code class="language-markup">&lt;style type="text/css"&gt;
 .stale-resource {
   color: gray;
 }
@@ -237,7 +254,7 @@ let you define a custom class to inform the users, that the resource is not full
 resource. This will reduce the size of each resource.</p>
 
 <p>Her is sample of response of <code>GET /api/customer/2</code></p>
-<pre><code>{
+<pre><code class="language-javascript">{
   "id": 2,
   "name": "John Doe",
   "addresses": [
@@ -262,7 +279,7 @@ resource. This will reduce the size of each resource.</p>
 </code></pre>
 
 <p>It could be interested to store countries in a separate localStorage to reduce size of the resource.</p>
-<pre><code>.factory('Customer', function($xResouce) {
+<pre><code class="language-javascript">.factory('Customer', function($xResouce) {
   return $xResouce('/api/customers/:id', {id: '@id'}, {
     get: {method:'GET', $cache:{
       key: 'customer/:id',        // Customer will be store in localStorage under key customer/:customerId
@@ -279,7 +296,7 @@ resource. This will reduce the size of each resource.</p>
 
 <p>You can define as many split as you want et you can split nestead objects. The following sample will store country,
 addresses, and customer in separates caches slots.</p>
-<pre><code>.factory('Customer', function($xResouce) {
+<pre><code class="language-javascript">.factory('Customer', function($xResouce) {
   return $xResouce('/api/customers/:id', {id: '@id'}, {
     get: {method:'GET', $cache:{
       key: 'customer/:id',
@@ -299,7 +316,7 @@ addresses, and customer in separates caches slots.</p>
 </code></pre>
 
 <p>this example is equals to:</p>
-<pre><code>.factory('Customer', function($xResouce) {
+<pre><code class="language-javascript">.factory('Customer', function($xResouce) {
   return $xResouce('/api/customers/:id', {id: '@id'}, {
     get: {method:'GET', $cache:{
       key: 'customer/:id',
@@ -322,7 +339,7 @@ addresses, and customer in separates caches slots.</p>
 
 <p>Each stored resource will be automatically removed when there life time will extends the configured TTL. You're able
 to define a global prefix to the storageKey or change the ttl with the $xResouceConfig service</p>
-<pre><code>angular.module('app', ['cResource'])
+<pre><code class="language-javascript">angular.module('app', ['cResource'])
   .run(function($xResouceConfig, myAuthService) {
     $xResouceConfig.prefix = 'u/' + myAuthService.user.id + '/';
     $xResouceConfig.ttl = 24 * 3600 * 1000; // 24 hours
@@ -330,14 +347,14 @@ to define a global prefix to the storageKey or change the ttl with the $xResouce
 </code></pre>
 
 <p>Because $xResouce is a provider, you can change the default action's behaviors</p>
-<pre><code>angular.module('app', ['cResource'])
+<pre><code class="language-javascript">angular.module('app', ['cResource'])
   .config(function($xResouceProvider) {
     $xResouceProvider.defaults.actions.query.$cache = false;
   })
 </code></pre>
 
 <p>In split resources, you can use identifiers of parents to compose the key.</p>
-<pre><code>.factory('Customer', function($xResouce) {
+<pre><code class="language-javascript">.factory('Customer', function($xResouce) {
   return $xResouce('/api/customers/:id', {id: '@id'}, {
     get: {method:'GET', $cache:{
       key: 'customer/:customerId',
@@ -356,7 +373,7 @@ to define a global prefix to the storageKey or change the ttl with the $xResouce
 <p>If your resources and sub resources use the same property name as identifier (like <code>id</code> or <code>uuid</code>) don't forget to
 specify a different mapping name or specify a new params mapping. Otherwise, all your resources will be merged under
 the same storageKey</p>
-<pre><code>// bad
+<pre><code class="language-javascript">// bad
 .factory('Customer', function($xResouce) {
   return $xResouce('/api/customers/:id', {id: '@id'}, {
     get: {method:'GET', $cache:{
@@ -402,12 +419,6 @@ the same storageKey</p>
 })
 </code></pre>
 
-        </section>
-
-        <footer>
-          Angular-extended-resource is maintained by <a href="https://github.com/jeremy-derusse">jeremy-derusse</a><br>
-        </footer>
-      </div>
     </div>
-  </body>
+</body>
 </html>
