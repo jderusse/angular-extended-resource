@@ -3,7 +3,7 @@
 module.exports = function(grunt) {
   var srcFiles = './src/**/*.js';
   var conf = {
-    dest: '../dist'
+    dest: './dist'
   };
 
   // Project configuration.
@@ -54,12 +54,6 @@ module.exports = function(grunt) {
     },
 
 
-    clean: {
-      build: [
-        './dist',
-      ],
-    },
-
     jshint: {
       options: {
         jshintrc: '.jshintrc'
@@ -71,11 +65,10 @@ module.exports = function(grunt) {
   // Load the plugin that provides the "uglify" task.
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-uglify');
-  grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-karma');
   
-  grunt.registerTask('dist', ['clean', 'jshint', 'copy', 'uglify:original', 'uglify:minimized']);
+  grunt.registerTask('dist', ['jshint', 'copy', 'uglify:original', 'uglify:minimized']);
   grunt.registerTask('test', ['dist', 'karma']);
 
   grunt.registerTask('default', ['dist']);

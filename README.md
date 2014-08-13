@@ -12,7 +12,7 @@ The diference with the `cache` option are:
 - the promise is not canceled
 - and data are stored in localStorage instead of memory.
 
-[Demo](http://jeremy-derusse.github.io/angular-extended-resource/demo) available on [github.io pages](jeremy-derusse.github.io/angular-extended-resource)
+[Demo](http://jeremy-derusse.github.io/angular-extended-resource/demo) available on [github.io pages](http://jeremy-derusse.github.io/angular-extended-resource)
 
 ## Install
 
