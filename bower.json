@@ -1,0 +1,28 @@
+{
+  "name": "angular-extended-resource-demo",
+  "version": "1.0.0",
+  "description": "A sample demo to test angular-extended-resource.",
+  "keywords": [
+    "demo",
+    "angular",
+    "cache",
+    "resource",
+    "localStorage"
+  ],
+  "authors": [
+    "Jérémy Derussé <jeremy@derusse.com>"
+  ],
+  "license": "MIT",
+  "homepage": "https://jeremy-derusse.github.io/angular-extended-resource/demo",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "tests",
+    "GruntFile.js"
+  ],
+  "dependencies": {
+    "angular-extended-resource": "*",
+    "bootstrap": "~3.2"
+  }
+}
