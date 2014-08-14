@@ -41,6 +41,16 @@ module.exports = function(grunt) {
     },
 
 
+    coveralls: {
+      options: {
+        debug: true,
+        coverage_dir: 'coverage',
+        force: true,
+        recursive: true
+      }
+    },
+
+
     copy: {
       build: {
         src: [
@@ -69,9 +79,11 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-karma');
+  grunt.loadNpmTasks('grunt-karma-coveralls');
   
   grunt.registerTask('dist', ['jshint', 'copy', 'uglify:original', 'uglify:minimized']);
   grunt.registerTask('test', ['karma']);
+  grunt.registerTask('travis', ['test', 'coveralls']);
 
   grunt.registerTask('default', ['dist']);
 };
