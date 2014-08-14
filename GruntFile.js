@@ -34,7 +34,9 @@ module.exports = function(grunt) {
 
     karma: {
       unit: {
-        configFile: 'tests/karma.conf.js'
+        configFile: 'tests/karma.conf.js',
+        singleRun: true,
+        browsers: ['PhantomJS']
       }
     },
 
@@ -69,7 +71,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-karma');
   
   grunt.registerTask('dist', ['jshint', 'copy', 'uglify:original', 'uglify:minimized']);
-  grunt.registerTask('test', ['dist', 'karma']);
+  grunt.registerTask('test', ['karma']);
 
   grunt.registerTask('default', ['dist']);
 };

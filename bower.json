@@ -22,6 +22,7 @@
     "GruntFile.js"
   ],
   "dependencies": {
-    "angular-resource": "~1.2"
+    "angular-resource": "~1.2",
+    "angular-mocks": "~1.2"
   }
 }

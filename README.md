@@ -1,5 +1,7 @@
 # angular-extended-resource
 
+[![Build Status](https://travis-ci.org/jeremy-derusse/angular-extended-resource.svg?branch=develop)](https://travis-ci.org/jeremy-derusse/angular-extended-resource)
+
 ## Description
 
 Angular extended resource is a wrapper for
