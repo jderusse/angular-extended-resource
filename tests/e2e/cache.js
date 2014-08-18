@@ -130,4 +130,39 @@ describe('A service using $xResource', function() {
       expect($window.localStorage['foo/customers/123']).toBeDefined();
     });
   });
+
+  describe('calling API with multiple resource format', function() {
+    var resource, resources, $httpBackend, $window, $xResourceConfig;
+    beforeEach(function() {
+      inject(function($injector) {
+        $window = $injector.get('$window');
+        $httpBackend = $injector.get('$httpBackend');
+        $xResourceConfig = $injector.get('$xResourceConfig');
+      });
+
+      $window.localStorage.clear();
+      $httpBackend.when('GET', '/customers/123')
+        .respond({id: 1, name: 'foo'});
+      $httpBackend.when('GET', '/customers')
+        .respond([{id: 123}, {id: 456}]);
+
+      Customer.get({id: 123});
+      $httpBackend.flush();
+      Customer.query();
+      $httpBackend.flush();
+      resource = Customer.get({id: 123});
+      resources = Customer.query();
+    });
+
+    it('should retreive merged data', function() {
+      expect(resource).toBeDefined();
+      expect(resource.id).toEqual(123);
+      expect(resource.name).toBeDefined();
+      expect(resource.name).toEqual('foo');
+      expect(resources).toBeDefined();
+      expect(resources[0].id).toEqual(123);
+      expect(resources[0].name).toBeDefined();
+      expect(resources[0].name).toEqual('foo');
+    });
+  });
 });

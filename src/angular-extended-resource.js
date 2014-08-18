@@ -18,7 +18,11 @@ angular.module('exResource', ['ngResource'])
   .factory('$xResourceCacheEngine', ['$window', '$xResourceConfig', function($window, $xResourceConfig) {
     return {
       put: function put(key, value) {
-        value = angular.copy(value);
+        if (angular.isArray(value)) {
+          value = angular.copy(value);
+        } else {
+          value = angular.extend({}, this.get(key), value);
+        }
         delete value.$promise;
         delete value.$resolved;
         delete value.$cache;

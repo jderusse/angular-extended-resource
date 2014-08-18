@@ -18,7 +18,7 @@ module.exports = function(config) {
     preprocessors: {
       'src/**/*.js': ['coverage']
     },
-    reporters: ['coverage'],
+    reporters: ['progress', 'coverage'],
     colors: true,
     logLevel: config.LOG_INFO,
     autoWatch: true,
