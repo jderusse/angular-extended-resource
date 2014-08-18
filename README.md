@@ -1,5 +1,8 @@
 # angular-extended-resource
 
+[![Build Status](https://travis-ci.org/jeremy-derusse/angular-extended-resource.svg?branch=develop)](https://travis-ci.org/jeremy-derusse/angular-extended-resource)
+[![Coverage Status](https://coveralls.io/repos/jeremy-derusse/angular-extended-resource/badge.png?branch=develop)](https://coveralls.io/r/jeremy-derusse/angular-extended-resource?branch=develop)
+
 ## Description
 
 Angular extended resource is a wrapper for
@@ -10,9 +13,9 @@ And to extract responses from a sub object:
 
 The diference with the `cache` option are:
 - the promise is not canceled
-- and data are stored in localStorage instead of memory.
+- data are stored in localStorage instead of memory.
 
-[Demo](http://jeremy-derusse.github.io/angular-extended-resource/demo) available on [github.io pages](jeremy-derusse.github.io/angular-extended-resource)
+[Demo](http://jeremy-derusse.github.io/angular-extended-resource/demo) available on [github.io pages](http://jeremy-derusse.github.io/angular-extended-resource)
 
 ## Install
 
@@ -90,11 +93,16 @@ Advanced documentation on [dedicated project page](http://jeremy-derusse.github.
 Jérémy Derussé, https://github.com/jeremy-derusse
 
 ## Last Version
-v1.0.0
+v1.0.1
 
 ## Contributors
 
 ## Change Log
+* v1.0.1
+    - Merge resource with previous cached value.
+    - Fix split on null value
+    - Optimize GC
+
 * v1.0.0
     - Initial version.
 
