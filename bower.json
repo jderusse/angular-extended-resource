@@ -1,8 +1,8 @@
 {
   "name": "angular-extended-resource",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An extended version of angular resource. store responses into localStorage.",
-  "main": "./dist/angular-extended-resource.js",
+  "main": "./angular-extended-resource.js",
   "keywords": [
     "angular",
     "cache",
@@ -22,6 +22,7 @@
     "GruntFile.js"
   ],
   "dependencies": {
-    "angular-resource": "~1.2"
+    "angular-resource": "~1.2",
+    "angular-mocks": "~1.2"
   }
 }

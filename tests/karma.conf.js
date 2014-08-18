@@ -11,16 +11,24 @@ module.exports = function(config) {
       'bower_components/angular/angular.js',
       'bower_components/angular-mocks/angular-mocks.js',
       'bower_components/angular-resource/angular-resource.js',
-      'dist/angular-extended-resource.min.js',
+      'src/**/*.js',
       'tests/e2e/**/*.js',
     ],
     exclude: [],
-    preprocessors: {},
-    reporters: ['progress'],
+    preprocessors: {
+      'src/**/*.js': ['coverage']
+    },
+    reporters: ['progress', 'coverage'],
     colors: true,
     logLevel: config.LOG_INFO,
     autoWatch: true,
     browsers: ['PhantomJS'],
-    singleRun: true
+    singleRun: true,
+    coverageReporter: {
+      reporters: [
+        {type: 'text'},
+        {type: 'lcov', dir: 'coverage/'}
+      ]
+    }
   });
 };

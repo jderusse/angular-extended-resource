@@ -1,5 +1,5 @@
 /*
- Angular Extended Resource v1.0.0
+ Angular Extended Resource v1.0.1
  License: MIT
 */
 'use strict';
@@ -18,7 +18,11 @@ angular.module('exResource', ['ngResource'])
   .factory('$xResourceCacheEngine', ['$window', '$xResourceConfig', function($window, $xResourceConfig) {
     return {
       put: function put(key, value) {
-        value = angular.copy(value);
+        if (angular.isArray(value)) {
+          value = angular.copy(value);
+        } else {
+          value = angular.extend({}, this.get(key), value);
+        }
         delete value.$promise;
         delete value.$resolved;
         delete value.$cache;
@@ -46,14 +50,11 @@ angular.module('exResource', ['ngResource'])
       },
       gc: function gc() {
         var now = new Date().getTime();
+        var resourceRegExp = /^\[(\d{13,}),/;
         angular.forEach($window.localStorage, function(data, index) {
-          if (angular.isDefined(data) && data !== 'undefined') {
-            var s = JSON.parse(data);
-            if (angular.isArray(s) && s.length > 1) {
-              if (s[0] + $xResourceConfig.ttl < now) {
-                delete $window.localStorage[index];
-              }
-            }
+          var match = resourceRegExp.exec(data);
+          if (match !== null && parseInt(match[1]) + $xResourceConfig.ttl < now) {
+            delete $window.localStorage[index];
           }
         });
       }
@@ -388,8 +389,12 @@ angular.module('exResource', ['ngResource'])
         angular.forEach(this.splitProperties.sort().reverse(), function(propertyPath) {
           var engine = new Engine(_this.template + '/' + propertyPath, templateParams, _this.splitConfigs[propertyPath]);
           pathExplorer.changeElement(resource, propertyPath, function(element) {
+            if (element === null) {
+              return null;
+            }
+
             var ref = engine.store(element, {}, element);
-            if(angular.isDefined(ref)) {
+            if (angular.isDefined(ref)) {
               return '#' + ref;
             }
 
@@ -430,7 +435,7 @@ angular.module('exResource', ['ngResource'])
         angular.forEach(this.splitProperties.sort(), function(propertyPath) {
           var engine = new Engine(null, {}, _this.splitConfigs[propertyPath]);
           pathExplorer.changeElement(resource, propertyPath, function(element) {
-            if (element[0] === '#') {
+            if (angular.isString(element) && element[0] === '#') {
               var restored = $xResourceCacheEngine.get(element.substr(1));
               engine.joinResource(restored);
               return restored;

@@ -2,10 +2,14 @@
 
 module.exports = function(grunt) {
   var srcFiles = './src/**/*.js';
+  var conf = {
+    dest: './dist'
+  };
 
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('bower.json'),
+    conf: conf,
 
     uglify: {
       original: {
@@ -13,7 +17,7 @@ module.exports = function(grunt) {
         files: [
           {
             src: srcFiles,
-            dest: './dist/angular-extended-resource.js'
+            dest: '<%= conf.dest %>/angular-extended-resource.js'
           }
         ]
       },
@@ -22,7 +26,7 @@ module.exports = function(grunt) {
         files: [
           {
             src: srcFiles,
-            dest: './dist/angular-extended-resource.min.js'
+            dest: '<%= conf.dest %>/angular-extended-resource.min.js'
           }
         ]
       }
@@ -30,15 +34,37 @@ module.exports = function(grunt) {
 
     karma: {
       unit: {
-        configFile: 'tests/karma.conf.js'
+        configFile: 'tests/karma.conf.js',
+        singleRun: true,
+        browsers: ['PhantomJS']
       }
     },
 
-    clean: {
-      build: [
-        './dist',
-      ],
+
+    coveralls: {
+      options: {
+        debug: true,
+        coverage_dir: 'coverage',
+        force: true,
+        recursive: true
+      }
     },
+
+
+    copy: {
+      build: {
+        src: [
+          './README.md',
+          './LICENSE',
+          './bower.json',
+        ],
+        dest: '<%= conf.dest %>/',
+        expand: true,
+        flatten: true,
+        cwd: ''
+      },
+    },
+
 
     jshint: {
       options: {
@@ -51,11 +77,13 @@ module.exports = function(grunt) {
   // Load the plugin that provides the "uglify" task.
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-uglify');
-  grunt.loadNpmTasks('grunt-contrib-clean');
+  grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-karma');
+  grunt.loadNpmTasks('grunt-karma-coveralls');
   
-  grunt.registerTask('dist', ['clean', 'jshint', 'uglify:original', 'uglify:minimized']);
-  grunt.registerTask('test', ['dist', 'karma']);
+  grunt.registerTask('dist', ['jshint', 'copy', 'uglify:original', 'uglify:minimized']);
+  grunt.registerTask('test', ['karma']);
+  grunt.registerTask('travis', ['test', 'coveralls']);
 
   grunt.registerTask('default', ['dist']);
 };
