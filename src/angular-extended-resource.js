@@ -50,14 +50,11 @@ angular.module('exResource', ['ngResource'])
       },
       gc: function gc() {
         var now = new Date().getTime();
+        var resourceRegExp = /^\[(\d{13,}),/;
         angular.forEach($window.localStorage, function(data, index) {
-          if (angular.isDefined(data) && data !== 'undefined') {
-            var s = JSON.parse(data);
-            if (angular.isArray(s) && s.length > 1) {
-              if (s[0] + $xResourceConfig.ttl < now) {
-                delete $window.localStorage[index];
-              }
-            }
+          var match = resourceRegExp.exec(data);
+          if (match !== null && parseInt(match[1]) + $xResourceConfig.ttl < now) {
+            delete $window.localStorage[index];
           }
         });
       }
