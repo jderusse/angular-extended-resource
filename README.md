@@ -93,11 +93,16 @@ Advanced documentation on [dedicated project page](http://jeremy-derusse.github.
 Jérémy Derussé, https://github.com/jeremy-derusse
 
 ## Last Version
-v1.0.0
+v1.0.1
 
 ## Contributors
 
 ## Change Log
+* v1.0.1
+    - Merge resource with previous cached value.
+    - Fix split on null value
+    - Optimize GC
+
 * v1.0.0
     - Initial version.
 
