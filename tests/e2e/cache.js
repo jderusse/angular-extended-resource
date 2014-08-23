@@ -45,7 +45,7 @@ describe('A service using $xResource', function() {
 
       $window.localStorage.clear();
       $window.localStorage['/foo'] = JSON.stringify([new Date().getTime(), 'foo']);
-      $window.localStorage['/bar'] = JSON.stringify([new Date().getTime() - 864001, 'bar']);
+      $window.localStorage['/bar'] = JSON.stringify([new Date().getTime() - 864000001, 'bar']);
       $xResourceCacheEngine.gc();
     });
 
