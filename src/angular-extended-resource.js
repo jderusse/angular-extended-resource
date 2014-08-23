@@ -11,7 +11,7 @@ angular.module('exResource', ['ngResource'])
   }])
   .factory('$xResourceConfig', function() {
     return {
-      ttl: 864000,
+      ttl: 864000000,
       prefix: ''
     };
   })
