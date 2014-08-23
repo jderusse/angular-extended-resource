@@ -93,11 +93,14 @@ Advanced documentation on [dedicated project page](http://jeremy-derusse.github.
 Jérémy Derussé, https://github.com/jeremy-derusse
 
 ## Last Version
-v1.0.1
+v1.0.2
 
 ## Contributors
 
 ## Change Log
+* v1.0.2
+    - Fix garbage collector TTL
+
 * v1.0.1
     - Merge resource with previous cached value.
     - Fix split on null value

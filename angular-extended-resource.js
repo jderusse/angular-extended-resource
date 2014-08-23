@@ -7,7 +7,7 @@ angular.module("exResource", [ "ngResource" ]).run([ "$interval", "$xResourceCac
     $xResourceCacheEngine.gc();
 } ]).factory("$xResourceConfig", function() {
     return {
-        ttl: 864e3,
+        ttl: 864e6,
         prefix: ""
     };
 }).factory("$xResourceCacheEngine", [ "$window", "$xResourceConfig", function($window, $xResourceConfig) {
