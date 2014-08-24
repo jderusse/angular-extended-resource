@@ -71,6 +71,10 @@ describe('A service using $xResource', function() {
       $xResourceCacheEngine.gc();
     });
 
+    afterEach(function() {
+      $xResourceConfig.ttl = 864000000;
+    });
+
     it('should delete old keys', function() {
       expect($window.localStorage['/foo']).toBeUndefined();
     });
@@ -124,6 +128,7 @@ describe('A service using $xResource', function() {
     afterEach(function() {
       $httpBackend.verifyNoOutstandingExpectation();
       $httpBackend.verifyNoOutstandingRequest();
+      $xResourceConfig.prefix = '';
     });
 
     it('should store data on localStorage', function() {
@@ -132,12 +137,11 @@ describe('A service using $xResource', function() {
   });
 
   describe('calling API with multiple resource format', function() {
-    var resource, resources, $httpBackend, $window, $xResourceConfig;
+    var resource, resources, $httpBackend, $window;
     beforeEach(function() {
       inject(function($injector) {
         $window = $injector.get('$window');
         $httpBackend = $injector.get('$httpBackend');
-        $xResourceConfig = $injector.get('$xResourceConfig');
       });
 
       $window.localStorage.clear();
