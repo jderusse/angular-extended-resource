@@ -340,9 +340,11 @@ addresses, and customer in separates caches slots.</p>
 <p>Each stored resource will be automatically removed when there life time will extends the configured TTL. You're able
 to define a global prefix to the storageKey or change the ttl with the $xResouceConfig service</p>
 <pre><code class="language-javascript">angular.module('app', ['cResource'])
+  .config(function($xResouceConfig) {
+    $xResouceConfig.ttl = 24 * 3600 * 1000; // 24 hours
+  })
   .run(function($xResouceConfig, myAuthService) {
     $xResouceConfig.prefix = 'u/' + myAuthService.user.id + '/';
-    $xResouceConfig.ttl = 24 * 3600 * 1000; // 24 hours
   })
 </code></pre>
 
