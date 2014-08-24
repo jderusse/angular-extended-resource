@@ -5,11 +5,9 @@ angular.module("exResource", [ "ngResource" ]).run([ "$interval", "$xResourceCac
         $xResourceCacheEngine.gc();
     }, 3e5);
     $xResourceCacheEngine.gc();
-} ]).factory("$xResourceConfig", function() {
-    return {
-        ttl: 864e6,
-        prefix: ""
-    };
+} ]).constant("$xResourceConfig", {
+    ttl: 864e6,
+    prefix: ""
 }).factory("$xResourceCacheEngine", [ "$window", "$xResourceConfig", function($window, $xResourceConfig) {
     return {
         put: function put(key, value) {
