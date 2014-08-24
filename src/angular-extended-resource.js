@@ -1,5 +1,5 @@
 /*
- Angular Extended Resource v1.0.2
+ Angular Extended Resource v1.0.3
  License: MIT
 */
 'use strict';
@@ -9,11 +9,9 @@ angular.module('exResource', ['ngResource'])
     $interval(function() {$xResourceCacheEngine.gc();}, 300000);
     $xResourceCacheEngine.gc();
   }])
-  .factory('$xResourceConfig', function() {
-    return {
+  .constant('$xResourceConfig', {
       ttl: 864000000,
       prefix: ''
-    };
   })
   .factory('$xResourceCacheEngine', ['$window', '$xResourceConfig', function($window, $xResourceConfig) {
     return {
