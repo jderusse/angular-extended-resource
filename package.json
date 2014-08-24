@@ -1,6 +1,6 @@
 {
   "name": "angular-extended-resource",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "An extended version of angular resource",
   "main": "src/angular-extended-resource.js",
   "directories": {

@@ -93,11 +93,14 @@ Advanced documentation on [dedicated project page](http://jeremy-derusse.github.
 Jérémy Derussé, https://github.com/jeremy-derusse
 
 ## Last Version
-v1.0.2
+v1.0.3
 
 ## Contributors
 
 ## Change Log
+* v1.0.3
+    - Configurable TTL
+
 * v1.0.2
     - Fix garbage collector TTL
 
