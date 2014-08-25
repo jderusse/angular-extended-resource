@@ -93,11 +93,14 @@ Advanced documentation on [dedicated project page](http://jeremy-derusse.github.
 Jérémy Derussé, https://github.com/jeremy-derusse
 
 ## Last Version
-v1.0.3
+v1.0.4
 
 ## Contributors
 
 ## Change Log
+* v1.0.4
+    - Fix key with empty value
+
 * v1.0.3
     - Configurable TTL
 
