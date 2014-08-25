@@ -174,7 +174,9 @@ angular.module('exResource', ['ngResource'])
               return head + encodedVal + tail;
             });
           } else {
-            url = url.replace(regExp, '');
+            url = url.replace(regExp, function(_, head, tail) {
+              return head + tail;
+            });
           }
         });
 
