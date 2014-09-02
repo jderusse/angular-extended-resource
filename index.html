@@ -67,7 +67,8 @@ resource fetching data from real API. And to extract responses from a sub object
 </code></pre>
 
 <p>Add a <code>&lt;script&gt;</code> to your <code>index.html</code>:</p>
-<pre><code class="language-markup">&lt;script src="/bower_components/angular-extended-resource/angular-extended-resource.js"&gt;&lt;/script&gt;
+<pre><code class="language-markup">&lt;script src="/bower_components/angular-resource/angular-resource.js"&gt;&lt;/script&gt;
+&lt;script src="/bower_components/angular-extended-resource/angular-extended-resource.js"&gt;&lt;/script&gt;
 </code></pre>
 
 <p>And add <code>exResource</code> as a dependency for your app:</p>
@@ -227,7 +228,7 @@ This property is an object containing contains:</p>
 <pre><code class="language-javascript">.factory('Customer', function($xResouce) {
   return $xResouce('/api/customers/:id', {id: '@id'}, {
     'get':   {method:'GET', $cache: {key: function(parameters) {return 'customer/' + parameters.id}}},
-    'query': {method:'GET', $cache: {key: true, split: {'': {key:'customer/:customerId', params:{customerId:'@id'}}}, isArray:true},
+    'query': {method:'GET', $cache: {key: true, split: {'*': {key:'customer/:customerId', params:{customerId:'@id'}}}, isArray:true},
   });
 })
 </code></pre>
@@ -284,7 +285,7 @@ resource. This will reduce the size of each resource.</p>
     get: {method:'GET', $cache:{
       key: 'customer/:id',        // Customer will be store in localStorage under key customer/:customerId
       split: {                    // Lets split the customer object
-        'addresses.country': {    // Split each country of each addresses of the resource
+        'addresses.*.country': {  // Split the country of each addresses of the resource
           key: 'country/:id',     // Store this part in cache under key country/:id
           params: {'id': '@code'} // As for placeholders in url, id refere to the @code property in the subObject Country
         }
@@ -301,11 +302,11 @@ addresses, and customer in separates caches slots.</p>
     get: {method:'GET', $cache:{
       key: 'customer/:id',
       split: {
-        'addresses': {
+        'addresses.*': {
           key: 'address/:id',
           params: {'id': '@id'}
         },
-        'addresses.country': {
+        'addresses.*.country': {
           key: 'country/:code',
           params: {'code': '@code'}
         },
@@ -321,7 +322,7 @@ addresses, and customer in separates caches slots.</p>
     get: {method:'GET', $cache:{
       key: 'customer/:id',
       split: {
-        'addresses': {
+        'addresses.*': {
           key: 'address/:id',
           params: {'id': '@id'},
           split: {
@@ -362,7 +363,7 @@ to define a global prefix to the storageKey or change the ttl with the $xResouce
       key: 'customer/:customerId',
       params: {customerId: '@id'}
       split: {
-        'addresses': {
+        'addresses.*': {
           key: 'customer/:customerId/address/:addressId',
           params: {'addressId': '@id'},
         }
@@ -381,7 +382,7 @@ the same storageKey</p>
     get: {method:'GET', $cache:{
       key: 'customer/:id',
       split: {
-        'addresses': {
+        'addresses.*': {
           key: 'address/:id', // :id is a reference Customer's {id: '@id'} defined near URL definition
         }
       }
@@ -394,7 +395,7 @@ the same storageKey</p>
   return $xResouce('/api/customers/:id', {id: '@id'}, {
     get: {method:'GET', $cache:{
       key: 'customer/:id',
-      split: {
+      split.*: {
         'addresses': {
           key: 'address/:id',  // :id is a reference Address's {id: '@id'} defined next line
           params: {id; '@id'}
@@ -411,7 +412,7 @@ the same storageKey</p>
       key: 'customer/:customerId',
       params: {customerId; '@id'}
       split: {
-        'addresses': {
+        'addresses.*': {
           key: 'address/:addressId',
           params: {addressId; '@id'}
         }

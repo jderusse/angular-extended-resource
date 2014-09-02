@@ -16,11 +16,11 @@ angular.module('app', ['exResource'])
     var cacheConfig = {
       key: 'customer/:id',
       split: {
-        'addresses': {
+        'addresses.*': {
           key: 'customer/:id/address/:addressId',
           params: {'addressId': '@id'}
         },
-        'addresses.country': {
+        'addresses.*.country': {
           key: 'country/:code',
           params: {'code': '@code'}
         },
@@ -28,7 +28,7 @@ angular.module('app', ['exResource'])
     };
     return $xResource('./fixtures/customers/:id.json', {id: '@id'}, {
       get: {method:'GET', $accessProperty: 'customer', $cache: cacheConfig},
-      query: {method:'GET', isArray: true, $accessProperty: 'customers', $cache:{key: 'customers', split: {'': cacheConfig}}}
+      query: {method:'GET', isArray: true, $accessProperty: 'customers', $cache:{key: 'customers', split: {'*': cacheConfig}}}
     });
   })
   .factory('User', function($xResource) {
