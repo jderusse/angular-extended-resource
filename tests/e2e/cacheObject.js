@@ -100,46 +100,46 @@ describe('A service using $xResource', function() {
       store: [
         {key: 'c/123', value: getFixtureCustomer()}],
       fetch: fixtureCustomer},
-    {config: {$cache: {key: 'c/:id', split:{phones: {key: true}}}},
+    {config: {$cache: {key: 'c/:id', split:{'phones.*': {key: true}}}},
       store: [
         {key: 'c/123', value: getFixtureCustomer(['#c/123/phones', '#c/123/phones'])},
         {key: 'c/123/phones', value: getFixturePhone(2)}],
       fetch: getFixtureCustomer([getFixturePhone(2), getFixturePhone(2)])},
-    {config: {$cache: {key: 'c/:id', split: {phones: {key: false}}}},
+    {config: {$cache: {key: 'c/:id', split: {'phones.*': {key: false}}}},
       store: [
-        {key: 'c/123', value: getFixtureCustomer([])}],
-      fetch: getFixtureCustomer([])},
-    {config: {$cache: {key: 'c/:id', split: {phones: {key: function(p, i) {return 'c/' + p.id + '/bar/' + i.id;}}}}},
+        {key: 'c/123', value: getFixtureCustomer([null, null])}],
+      fetch: getFixtureCustomer([null, null])},
+    {config: {$cache: {key: 'c/:id', split: {'phones.*': {key: function(p, i) {return 'c/' + p.id + '/bar/' + i.id;}}}}},
       store: [
         {key: 'c/123', value: getFixtureCustomer(['#c/123/bar/12', '#c/123/bar/34'])},
         {key: 'c/123/bar/12', value: getFixturePhone(1)},
         {key: 'c/123/bar/34', value: getFixturePhone(2)}],
       fetch: fixtureCustomer},
-    {config: {$cache: {key: 'c/:id', split: {phones: {key: 'c/:id/bar/:subId'}}}},
+    {config: {$cache: {key: 'c/:id', split: {'phones.*': {key: 'c/:id/bar/:subId'}}}},
       store: [
         {key: 'c/123', value: getFixtureCustomer(['#c/123/bar', '#c/123/bar'])},
         {key: 'c/123/bar', value: getFixturePhone(2)}],
       fetch: getFixtureCustomer([getFixturePhone(2), getFixturePhone(2)])},
-    {config: {$cache: {key: 'c/:id', split: {phones: {key: 'c/:id/bar/:subId', params: {subId: '@id'}}}}},
+    {config: {$cache: {key: 'c/:id', split: {'phones.*': {key: 'c/:id/bar/:subId', params: {subId: '@id'}}}}},
       store: [
         {key: 'c/123', value: getFixtureCustomer(['#c/123/bar/12', '#c/123/bar/34'])},
         {key: 'c/123/bar/12', value: getFixturePhone(1)},
         {key: 'c/123/bar/34', value: getFixturePhone(2)}],
       fetch: fixtureCustomer},
-    {config: {$cache: {key: 'c/:id', split: {phones: {key: 'c/:id/bar/:subId', params: {id: '@parentId', subId: '@id'}}}}},
+    {config: {$cache: {key: 'c/:id', split: {'phones.*': {key: 'c/:id/bar/:subId', params: {id: '@parentId', subId: '@id'}}}}},
       store: [
         {key: 'c/123', value: getFixtureCustomer(['#c/789/bar/12', '#c/789/bar/34'])},
         {key: 'c/789/bar/12', value: getFixturePhone(1)},
         {key: 'c/789/bar/34', value: getFixturePhone(2)}],
       fetch: fixtureCustomer},
-    {config: {$cache: {key: 'c/:id', split: {phones: {key: 'c/:id/bar/:subId', params: {subId: '@id'}}, 'phones.country': {key: 'c/:id/baz/:subSubId', params: {subSubId: '@id'}}}}},
+    {config: {$cache: {key: 'c/:id', split: {'phones.*': {key: 'c/:id/bar/:subId', params: {subId: '@id'}}, 'phones.*.country': {key: 'c/:id/baz/:subSubId', params: {subSubId: '@id'}}}}},
       store: [
         {key: 'c/123', value: getFixtureCustomer(['#c/123/bar/12', '#c/123/bar/34'])},
         {key: 'c/123/bar/12', value: getFixturePhone(1, '#c/123/baz/fr')},
         {key: 'c/123/bar/34', value: getFixturePhone(2, '#c/123/baz/fr')},
         {key: 'c/123/baz/fr', value: fixtureCountry}],
       fetch: fixtureCustomer},
-    {config: {$cache: {key: 'c/:id', split: {phones: {key: 'c/:id/bar/:subId', params: {subId: '@id'}, split: {country: {key: 'c/:id/bar/:subId/baz/:subSubId', params: {subSubId: '@id'}}}}}}},
+    {config: {$cache: {key: 'c/:id', split: {'phones.*': {key: 'c/:id/bar/:subId', params: {subId: '@id'}, split: {country: {key: 'c/:id/bar/:subId/baz/:subSubId', params: {subSubId: '@id'}}}}}}},
       store: [
         {key: 'c/123', value: getFixtureCustomer(['#c/123/bar/12', '#c/123/bar/34'])},
         {key: 'c/123/bar/12', value: getFixturePhone(1, '#c/123/bar/12/baz/fr')},
@@ -173,9 +173,11 @@ describe('A service using $xResource', function() {
       });
 
       var cleanUp = function(data) {
-        delete data.$cache;
-        delete data.$promise;
-        delete data.$resolved;
+        if (data) {
+          delete data.$cache;
+          delete data.$promise;
+          delete data.$resolved;
+        }
 
         if (angular.isObject(data) || angular.isArray(data)) {
           angular.forEach(data, function(item) {
