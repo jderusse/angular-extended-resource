@@ -63,7 +63,7 @@ angular.module("exResource", [ "ngResource" ]).run([ "$interval", "$xResourceCac
                 $cache: {
                     key: true,
                     split: {
-                        "": true
+                        "*": true
                     }
                 },
                 isArray: true
@@ -120,7 +120,7 @@ angular.module("exResource", [ "ngResource" ]).run([ "$interval", "$xResourceCac
             return url.replace(/\/\./, "/.");
         };
         function PathExplorer() {}
-        PathExplorer.MEMBER_NAME_REGEX = /^(\.[a-zA-Z_$][0-9a-zA-Z_$]*)+$/;
+        PathExplorer.MEMBER_NAME_REGEX = /^(\.(\*|[a-zA-Z_$][0-9a-zA-Z_$]*))+$/;
         PathExplorer.prototype.isValidDottedPath = function isValidDottedPath(path) {
             return path !== null && path !== "" && path !== "hasOwnProperty" && PathExplorer.MEMBER_NAME_REGEX.test("." + path);
         };
@@ -138,19 +138,7 @@ angular.module("exResource", [ "ngResource" ]).run([ "$interval", "$xResourceCac
         PathExplorer.prototype.changeElement = function changeElement(object, path, callback) {
             var _this = this;
             if (path === "") {
-                if (angular.isArray(object)) {
-                    var objectCopy = angular.copy(object);
-                    object.length = 0;
-                    angular.forEach(objectCopy, function(element) {
-                        var sub = callback(element);
-                        if (angular.isDefined(sub)) {
-                            object.push(callback(element));
-                        }
-                    });
-                    return object;
-                } else {
-                    return callback(object);
-                }
+                return callback(object);
             } else {
                 if (!this.isValidDottedPath(path)) {
                     throw angular.$$minErr("$xResource")("badmember", 'Dotted member path "@{0}" is invalid.', path);
@@ -158,11 +146,21 @@ angular.module("exResource", [ "ngResource" ]).run([ "$interval", "$xResourceCac
                 var keys = path.split(".");
                 var key = keys.shift();
                 var subPath = keys.join(".");
-                angular.forEach(angular.isArray(object) ? object : [ object ], function(element) {
-                    if (angular.isDefined(element[key])) {
-                        element[key] = _this.changeElement(element[key], subPath, callback);
+                if (key === "*") {
+                    if (!angular.isArray(object)) {
+                        throw angular.$$minErr("$xResource")("badmember", 'Path "*" point to a non-array object.', path);
                     }
-                });
+                    angular.forEach(object, function(element, index) {
+                        object[index] = _this.changeElement(element, subPath, callback);
+                    });
+                } else {
+                    if (angular.isArray(object)) {
+                        throw angular.$$minErr("$xResource")("badmember", 'Path "' + path + '" point to a array object.', path);
+                    }
+                    if (angular.isDefined(object[key])) {
+                        object[key] = _this.changeElement(object[key], subPath, callback);
+                    }
+                }
                 return object;
             }
         };
@@ -228,7 +226,7 @@ angular.module("exResource", [ "ngResource" ]).run([ "$interval", "$xResourceCac
         Engine.prototype.splitResource = function splitResource(resource, templateParams) {
             var _this = this;
             angular.forEach(this.splitProperties.sort().reverse(), function(propertyPath) {
-                var engine = new Engine(_this.template + "/" + propertyPath, templateParams, _this.splitConfigs[propertyPath]);
+                var engine = new Engine(_this.template + "/" + propertyPath.replace(/(^\*|\.\*)/, ""), templateParams, _this.splitConfigs[propertyPath]);
                 pathExplorer.changeElement(resource, propertyPath, function(element) {
                     if (element === null) {
                         return null;

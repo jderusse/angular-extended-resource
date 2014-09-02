@@ -93,11 +93,14 @@ Advanced documentation on [dedicated project page](http://jeremy-derusse.github.
 Jérémy Derussé, https://github.com/jeremy-derusse
 
 ## Last Version
-v1.0.4
+v1.1.0
 
 ## Contributors
 
 ## Change Log
+* v1.1.0
+    - Use char "*" in splitKey to apply splits on array
+
 * v1.0.4
     - Fix key with empty value
 
