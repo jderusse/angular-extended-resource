@@ -1,5 +1,5 @@
 /*
- Angular Extended Resource v1.0.4
+ Angular Extended Resource v1.1.0
  License: MIT
 */
 'use strict';
