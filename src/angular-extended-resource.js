@@ -1,5 +1,5 @@
 /*
- Angular Extended Resource v1.0.4
+ Angular Extended Resource v1.1.0
  License: MIT
 */
 'use strict';
@@ -63,8 +63,8 @@ angular.module('exResource', ['ngResource'])
 
     this.defaults = {
       actions: {
-        'get':    {method:'GET', $cache:true},
-        'query':  {method:'GET', $cache:{key:true, split: {'': true}}, isArray:true},
+        'get': {method: 'GET', $cache: true},
+        'query': {method: 'GET', $cache: {key: true, split: {'*': true}}, isArray: true},
       }
     };
 
@@ -197,7 +197,7 @@ angular.module('exResource', ['ngResource'])
       function PathExplorer() {
       }
 
-      PathExplorer.MEMBER_NAME_REGEX = /^(\.[a-zA-Z_$][0-9a-zA-Z_$]*)+$/;
+      PathExplorer.MEMBER_NAME_REGEX = /^(\.(\*|[a-zA-Z_$][0-9a-zA-Z_$]*))+$/;
 
       /**
        * Determine if the path is valid or not
@@ -243,20 +243,7 @@ angular.module('exResource', ['ngResource'])
       PathExplorer.prototype.changeElement = function changeElement(object, path, callback) {
         var _this = this;
         if (path === '') {
-          if (angular.isArray(object)) {
-            var objectCopy = angular.copy(object);
-            object.length = 0;
-            angular.forEach(objectCopy, function(element) {
-              var sub = callback(element);
-              if (angular.isDefined(sub)) {
-                object.push(callback(element));
-              }
-            });
-
-            return object;
-          } else {
-            return callback(object);
-          }
+          return callback(object);
         } else {
           if (!this.isValidDottedPath(path)) {
             throw angular.$$minErr('$xResource')('badmember', 'Dotted member path "@{0}" is invalid.', path);
@@ -265,11 +252,23 @@ angular.module('exResource', ['ngResource'])
           var key = keys.shift();
           var subPath = keys.join('.');
 
-          angular.forEach(angular.isArray(object) ? object: [object], function(element) {
-            if (angular.isDefined(element[key])) {
-              element[key] = _this.changeElement(element[key], subPath, callback);
+          if (key === '*') {
+            if (!angular.isArray(object)) {
+              throw angular.$$minErr('$xResource')('badmember', 'Path "*" point to a non-array object.', path);
             }
-          });
+
+            angular.forEach(object, function(element, index) {
+              object[index] = _this.changeElement(element, subPath, callback);
+            });
+          } else {
+            if (angular.isArray(object)) {
+              throw angular.$$minErr('$xResource')('badmember', 'Path "' + path + '" point to a array object.', path);
+            }
+
+            if (angular.isDefined(object[key])) {
+              object[key] = _this.changeElement(object[key], subPath, callback);
+            }
+          }
 
           return object;
         }
@@ -387,7 +386,7 @@ angular.module('exResource', ['ngResource'])
       Engine.prototype.splitResource = function splitResource(resource, templateParams) {
         var _this = this;
         angular.forEach(this.splitProperties.sort().reverse(), function(propertyPath) {
-          var engine = new Engine(_this.template + '/' + propertyPath, templateParams, _this.splitConfigs[propertyPath]);
+          var engine = new Engine(_this.template + '/' + propertyPath.replace(/(^\*|\.\*)/, ''), templateParams, _this.splitConfigs[propertyPath]);
           pathExplorer.changeElement(resource, propertyPath, function(element) {
             if (element === null) {
               return null;
