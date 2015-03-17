@@ -93,11 +93,14 @@ Advanced documentation on [dedicated project page](http://jeremy-derusse.github.
 Jérémy Derussé, https://github.com/jeremy-derusse
 
 ## Last Version
-v1.1.0
+v2.0.0
 
 ## Contributors
 
 ## Change Log
+* v2.0.0
+    - Replace localStorage by localForage
+
 * v1.1.0
     - Use char "*" in splitKey to apply splits on array
 

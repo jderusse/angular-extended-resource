@@ -12,13 +12,13 @@ describe('A service using $xResource', function() {
   });
 
   describe('calling correct API', function() {
-    var resource, $httpBackend, $window;
+    var resource, $httpBackend, $localForage;
     beforeEach(function() {
       inject(function($injector) {
-        $window = $injector.get('$window');
+        $localForage = $injector.get('$localForage');
         $httpBackend = $injector.get('$httpBackend');
       });
-      $window.localStorage.clear();
+      $localForage.clear();
       $httpBackend.when('GET', '/customers/123')
         .respond({cus: {id: 1}});
 
@@ -39,13 +39,13 @@ describe('A service using $xResource', function() {
   });
 
   describe('calling wrong API', function() {
-    var resource, $httpBackend, $window;
+    var resource, $httpBackend, $localForage;
     beforeEach(function() {
       inject(function($injector) {
-        $window = $injector.get('$window');
+        $localForage = $injector.get('$localForage');
         $httpBackend = $injector.get('$httpBackend');
       });
-      $window.localStorage.clear();
+      $localForage.clear();
       $httpBackend.when('GET', '/customers/123')
         .respond({error: 'foo'});
 
