@@ -1,6 +1,6 @@
 'use strict';
 
-describe('A service using $xResource', function() {
+describe('A service using $xResource to cache Object', function() {
   var Customer;
   beforeEach(function() {
     module('exResource');
@@ -154,14 +154,14 @@ describe('A service using $xResource', function() {
         store = data.store,
         fetch = data.fetch;
     describe('calling a action with config ' + JSON.stringify(config), function() {
-      var resource, $window;
+      var resource, $localForage;
       beforeEach(function() {
         inject(function($injector) {
-          $window = $injector.get('$window');
-          $window.localStorage.clear();
+          $localForage = $injector.get('$localForage');
+          $localForage.clear();
 
           angular.forEach(store, function(expectation) {
-            $window.localStorage[expectation.key] = JSON.stringify([new Date().getTime(), expectation.value]);
+            $localForage.setItem(expectation.key, [new Date().getTime(), expectation.value]);
           });
 
           Customer = $injector.get('$xResource')('/customers/:id', {id: '@id'}, {
@@ -176,6 +176,7 @@ describe('A service using $xResource', function() {
         if (data) {
           delete data.$cache;
           delete data.$promise;
+          delete data.$cachePromise;
           delete data.$resolved;
         }
 
@@ -187,16 +188,23 @@ describe('A service using $xResource', function() {
       };
 
       it('should retreives a customer', function() {
-        cleanUp(resource);
-        expect(JSON.stringify(resource)).toEqual(JSON.stringify(fetch));
+        if (angular.isDefined(resource.$cachePromise)) {
+          resource.$cachePromise.then(function() {
+            cleanUp(resource);
+            expect(JSON.stringify(resource)).toEqual(JSON.stringify(fetch));
+          });
+        } else {
+          cleanUp(resource);
+          expect(JSON.stringify(resource)).toEqual(JSON.stringify(fetch));
+        }
       });
     });
     describe('calling a action with config ' + JSON.stringify(config), function() {
-      var resource, $httpBackend, $window;
+      var resource, $httpBackend, $localForage;
       beforeEach(function() {
         inject(function($injector) {
-          $window = $injector.get('$window');
-          $window.localStorage.clear();
+          $localForage = $injector.get('$localForage');
+          $localForage.clear();
           $httpBackend = $injector.get('$httpBackend');
           $httpBackend.when('GET', '/customers/123')
             .respond(fixtureCustomer);
@@ -215,10 +223,11 @@ describe('A service using $xResource', function() {
 
       it('should store "' + JSON.stringify(store) + '"', function() {
         angular.forEach(store, function(expectation) {
-          expect($window.localStorage[expectation.key]).toBeDefined();
-          expect(JSON.parse($window.localStorage[expectation.key])[1]).toEqual(expectation.value);
+          $localForage.getItem(expectation.key).then(function (value) {
+            expect(value).toBeDefined();
+            expect(value[1]).toEqual(expectation.value);
+          });
         });
-        expect($window.localStorage.length).toBe(store.length);
       });
     });
   });

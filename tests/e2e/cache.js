@@ -36,39 +36,47 @@ describe('A service using $xResource', function() {
   });
 
   describe('running Garbage Collector', function() {
-    var $window, $xResourceCacheEngine;
+    var $localForage, $xResourceCacheEngine;
     beforeEach(function() {
       inject(function($injector) {
-        $window = $injector.get('$window');
+        $localForage = $injector.get('$localForage');
         $xResourceCacheEngine = $injector.get('$xResourceCacheEngine');
       });
 
-      $window.localStorage.clear();
-      $window.localStorage['/foo'] = JSON.stringify([new Date().getTime(), 'foo']);
-      $window.localStorage['/bar'] = JSON.stringify([new Date().getTime() - 864000001, 'bar']);
-      $xResourceCacheEngine.gc();
+      $localForage.clear();
+      $localForage.setItem('/foo', [new Date().getTime(), 'foo']).then(function() {
+        $localForage.setItem('/bar', [new Date().getTime() - 864000001, 'bar']).then(function() {
+          $xResourceCacheEngine.gc();
+        });
+      });
     });
 
     it('should delete old keys', function() {
-      expect($window.localStorage['/foo']).toBeDefined();
-      expect($window.localStorage['/bar']).toBeUndefined();
+      $localForage.getItem('/foo', function(value) {
+        expect(value).toBeDefined();
+      });
+      $localForage.getItem('/bar', function(value) {
+        expect(value).toBeUndefined();
+      });
     });
   });
 
   describe('running Garbage Collector with small TTL', function() {
-    var $window, $xResourceCacheEngine, $xResourceConfig;
+    var $localForage, $xResourceCacheEngine, $xResourceConfig;
     beforeEach(function() {
       inject(function($injector) {
-        $window = $injector.get('$window');
+        $localForage = $injector.get('$localForage');
         $xResourceCacheEngine = $injector.get('$xResourceCacheEngine');
         $xResourceConfig = $injector.get('$xResourceConfig');
       });
 
-      $window.localStorage.clear();
-      $window.localStorage['/foo'] = JSON.stringify([new Date().getTime() - 10, 'foo']);
-      $xResourceCacheEngine.gc();
-      $xResourceConfig.ttl = 9;
-      $xResourceCacheEngine.gc();
+      $localForage.clear().then(function() {
+        $localForage.setItem('/foo', [new Date().getTime() - 10, 'foo']).then(function() {
+          $xResourceCacheEngine.gc();
+          $xResourceConfig.ttl = 9;
+          $xResourceCacheEngine.gc();
+        });
+      });
     });
 
     afterEach(function() {
@@ -76,18 +84,20 @@ describe('A service using $xResource', function() {
     });
 
     it('should delete old keys', function() {
-      expect($window.localStorage['/foo']).toBeUndefined();
+      $localForage.getItem('/foo', function(value) {
+        expect(value).toBeUndefined();
+      });
     });
   });
 
   describe('calling API', function() {
-    var resource, $httpBackend, $window;
+    var resource, $httpBackend, $localForage;
     beforeEach(function() {
       inject(function($injector) {
-        $window = $injector.get('$window');
+        $localForage = $injector.get('$localForage');
         $httpBackend = $injector.get('$httpBackend');
       });
-      $window.localStorage.clear();
+      $localForage.clear();
       $httpBackend.when('GET', '/customers/123')
         .respond({id: 1});
 
@@ -104,20 +114,22 @@ describe('A service using $xResource', function() {
       expect(resource.$cache.stale).toBe(false);
     });
     it('should store data on localStorage', function() {
-      expect($window.localStorage['/customers/123']).toBeDefined();
+      $localForage.getItem('/customers/123', function(value) {
+        expect(value).toBeDefined();
+      });
     });
   });
 
   describe('calling API with prefix', function() {
-    var resource, $httpBackend, $window, $xResourceConfig;
+    var resource, $httpBackend, $localForage, $xResourceConfig;
     beforeEach(function() {
       inject(function($injector) {
-        $window = $injector.get('$window');
+        $localForage = $injector.get('$localForage');
         $httpBackend = $injector.get('$httpBackend');
         $xResourceConfig = $injector.get('$xResourceConfig');
       });
 
-      $window.localStorage.clear();
+      $localForage.clear();
       $httpBackend.when('GET', '/customers/123')
         .respond({id: 1});
       $xResourceConfig.prefix = 'foo';
@@ -132,19 +144,21 @@ describe('A service using $xResource', function() {
     });
 
     it('should store data on localStorage', function() {
-      expect($window.localStorage['foo/customers/123']).toBeDefined();
+      $localForage.getItem('foo/customers/123', function(value) {
+        expect(value).toBeDefined();
+      });
     });
   });
 
   describe('calling API with multiple resource format', function() {
-    var resource, resources, $httpBackend, $window;
+    var resource, resources, $httpBackend, $localForage;
     beforeEach(function() {
       inject(function($injector) {
-        $window = $injector.get('$window');
+        $localForage = $injector.get('$localForage');
         $httpBackend = $injector.get('$httpBackend');
       });
 
-      $window.localStorage.clear();
+      $localForage.clear();
       $httpBackend.when('GET', '/customers/123')
         .respond({id: 1, name: 'foo'});
       $httpBackend.when('GET', '/customers')
@@ -160,13 +174,17 @@ describe('A service using $xResource', function() {
 
     it('should retreive merged data', function() {
       expect(resource).toBeDefined();
-      expect(resource.id).toEqual(123);
-      expect(resource.name).toBeDefined();
-      expect(resource.name).toEqual('foo');
+      resource.$cachePromise.then(function() {
+        expect(resource.id).toEqual(123);
+        expect(resource.name).toBeDefined();
+        expect(resource.name).toEqual('foo');
+      });
       expect(resources).toBeDefined();
-      expect(resources[0].id).toEqual(123);
-      expect(resources[0].name).toBeDefined();
-      expect(resources[0].name).toEqual('foo');
+      resources.$cachePromise.then(function() {
+        expect(resources[0].id).toEqual(123);
+        expect(resources[0].name).toBeDefined();
+        expect(resources[0].name).toEqual('foo');
+      });
     });
   });
 });
