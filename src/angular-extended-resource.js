@@ -10,7 +10,7 @@ angular.module('exResource', ['ngResource', 'LocalForageModule'])
     $xResourceCacheEngine.gc();
   }])
   .constant('$xResourceConfig', {
-    ttl: 1,
+    ttl: 864e6,
     prefix: ''
   })
   .factory('$xResourceCacheEngine', ['$window', '$xResourceConfig', '$localForage', function($window, $xResourceConfig, $localForage) {
@@ -49,7 +49,6 @@ angular.module('exResource', ['ngResource', 'LocalForageModule'])
       },
       gc: function gc() {
         var now = new Date().getTime();
-        var resourceRegExp = /^\[(\d{13,}),/;
         $localForage.keys().then(function(keys) {
           angular.forEach(keys, function(key) {
             $localForage.getItem(key).then(function(data) {
