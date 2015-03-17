@@ -1,6 +1,6 @@
 {
   "name": "angular-extended-resource",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "An extended version of angular resource. store responses into localStorage.",
   "main": "./angular-extended-resource.js",
   "keywords": [
