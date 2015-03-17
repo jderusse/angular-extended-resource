@@ -1,6 +1,6 @@
 "use strict";
 
-angular.module("exResource", [ "ngResource" ]).run([ "$interval", "$xResourceCacheEngine", function($interval, $xResourceCacheEngine) {
+angular.module("exResource", [ "ngResource", "LocalForageModule" ]).run([ "$interval", "$xResourceCacheEngine", function($interval, $xResourceCacheEngine) {
     $interval(function() {
         $xResourceCacheEngine.gc();
     }, 3e5);
@@ -8,45 +8,46 @@ angular.module("exResource", [ "ngResource" ]).run([ "$interval", "$xResourceCac
 } ]).constant("$xResourceConfig", {
     ttl: 864e6,
     prefix: ""
-}).factory("$xResourceCacheEngine", [ "$window", "$xResourceConfig", function($window, $xResourceConfig) {
+}).factory("$xResourceCacheEngine", [ "$window", "$xResourceConfig", "$localForage", function($window, $xResourceConfig, $localForage) {
     return {
         put: function put(key, value) {
+            var store = function(value) {
+                delete value.$promise;
+                delete value.$cachePromise;
+                delete value.$resolved;
+                delete value.$cache;
+                $localForage.setItem(key, [ new Date().getTime(), value ]);
+            };
             if (angular.isArray(value)) {
-                value = angular.copy(value);
+                store(angular.copy(value));
             } else {
-                value = angular.extend({}, this.get(key), value);
-            }
-            delete value.$promise;
-            delete value.$resolved;
-            delete value.$cache;
-            var o = [ new Date().getTime(), value ], encoded = JSON.stringify(o);
-            if (angular.isUndefined(encoded)) {
-                delete $window.localStorage[key];
-            } else {
-                $window.localStorage[key] = encoded;
+                this.get(key).then(function(cachedValue) {
+                    store(angular.extend({}, cachedValue, value));
+                });
             }
         },
         get: function get(key) {
-            var data = $window.localStorage[key];
-            if (angular.isUndefined(data) || data === "undefined") {
-                return undefined;
-            }
-            var s = JSON.parse(data);
-            var value = s[1];
-            value.$cache = {
-                updated: s[0],
-                stale: true
-            };
-            return value;
+            return $localForage.getItem(key).then(function(data) {
+                if (angular.isDefined(data)) {
+                    var value = data[1];
+                    value.$cache = {
+                        updated: data[0],
+                        stale: true
+                    };
+                    return value;
+                }
+            });
         },
         gc: function gc() {
             var now = new Date().getTime();
-            var resourceRegExp = /^\[(\d{13,}),/;
-            angular.forEach($window.localStorage, function(data, index) {
-                var match = resourceRegExp.exec(data);
-                if (match !== null && parseInt(match[1]) + $xResourceConfig.ttl < now) {
-                    delete $window.localStorage[index];
-                }
+            $localForage.keys().then(function(keys) {
+                angular.forEach(keys, function(key) {
+                    $localForage.getItem(key).then(function(data) {
+                        if (data[0] + $xResourceConfig.ttl < now) {
+                            $localForage.removeItem(key);
+                        }
+                    });
+                });
             });
         }
     };
@@ -70,7 +71,7 @@ angular.module("exResource", [ "ngResource" ]).run([ "$interval", "$xResourceCac
             }
         }
     };
-    this.$get = [ "$window", "$http", "$log", "$resource", "$xResourceConfig", "$xResourceCacheEngine", function($window, $http, $log, $resource, $xResourceConfig, $xResourceCacheEngine) {
+    this.$get = [ "$window", "$http", "$log", "$resource", "$xResourceConfig", "$xResourceCacheEngine", "$q", function($window, $http, $log, $resource, $xResourceConfig, $xResourceCacheEngine, $q) {
         function TemplateEngine() {
             this._parsed = {};
         }
@@ -233,7 +234,7 @@ angular.module("exResource", [ "ngResource" ]).run([ "$interval", "$xResourceCac
                     }
                     var ref = engine.store(element, {}, element);
                     if (angular.isDefined(ref)) {
-                        return "#" + ref;
+                        return (angular.isArray(element) ? "#@" : "#$") + ref;
                     }
                     return undefined;
                 });
@@ -252,32 +253,61 @@ angular.module("exResource", [ "ngResource" ]).run([ "$interval", "$xResourceCac
             return key;
         };
         Engine.prototype.joinResource = function joinResource(resource) {
+            var deferred = $q.defer();
+            deferred.counter = 1;
+            var resolve = function() {
+                if (--deferred.counter === 0) {
+                    deferred.resolve(resource);
+                }
+            };
             var _this = this;
             angular.forEach(this.splitProperties.sort(), function(propertyPath) {
                 var engine = new Engine(null, {}, _this.splitConfigs[propertyPath]);
                 pathExplorer.changeElement(resource, propertyPath, function(element) {
-                    if (angular.isString(element) && element[0] === "#") {
-                        var restored = $xResourceCacheEngine.get(element.substr(1));
-                        engine.joinResource(restored);
-                        return restored;
+                    if (angular.isString(element)) {
+                        var key = element.substr(0, 2);
+                        if (key === "#$" || key === "#@") {
+                            var restored = key === "#$" ? {} : [];
+                            deferred.counter++;
+                            $xResourceCacheEngine.get(element.substr(2)).then(function(cachedValue) {
+                                angular.extend(restored, cachedValue);
+                                engine.joinResource(restored).then(function() {
+                                    resolve();
+                                });
+                            });
+                            return restored;
+                        } else {
+                            return element;
+                        }
                     } else {
                         return element;
                     }
                 });
             });
+            resolve();
+            return deferred.promise;
         };
         Engine.prototype.fetch = function fetch(callParams, callData) {
             if (!this.enabled) {
                 return;
             }
-            var key = this.getKey(this.getTemplateParams(callParams, callData), null), resource = $xResourceCacheEngine.get(key);
-            if (angular.isUndefined(resource)) {
-                return resource;
-            }
-            if (this.splitProperties.length) {
-                this.joinResource(resource);
-            }
-            return resource;
+            var key = this.getKey(this.getTemplateParams(callParams, callData), null);
+            var _this = this;
+            var deferred = $q.defer();
+            $xResourceCacheEngine.get(key).then(function(resource) {
+                if (angular.isUndefined(resource)) {
+                    deferred.resolve(resource);
+                } else if (_this.splitProperties.length) {
+                    _this.joinResource(resource).then(function() {
+                        deferred.resolve(resource);
+                    }, function(reason) {
+                        deferred.reject(reason);
+                    });
+                } else {
+                    deferred.resolve(resource);
+                }
+            });
+            return deferred.promise;
         };
         var pathExplorer = new PathExplorer(), templateEngine = new TemplateEngine();
         var cacheWrapper = function cacheWrapper(call, url, paramDefaults, action, cacheSettings) {
@@ -333,12 +363,23 @@ angular.module("exResource", [ "ngResource" ]).run([ "$interval", "$xResourceCac
             };
             var engine = new Engine(action.url || url, angular.extend({}, paramDefaults, action.params), cacheSettings);
             return function() {
+                var deferred = $q.defer();
                 var response = call.apply(this, arguments);
+                response.$cachePromise = deferred.promise;
                 var parsedArguments = parseArguments.apply(this, arguments);
-                var stored = engine.fetch(parsedArguments.params, parsedArguments.data);
-                if (angular.isDefined(stored)) {
-                    angular.extend(response, stored);
-                    response.$cache = stored.$cache;
+                var fetchPromise = engine.fetch(parsedArguments.params, parsedArguments.data);
+                if (angular.isDefined(fetchPromise)) {
+                    fetchPromise.then(function(stored) {
+                        if (angular.isUndefined(response.$cache) && angular.isDefined(stored)) {
+                            angular.extend(response, stored);
+                            response.$cache = stored.$cache;
+                            deferred.resolve(response);
+                        }
+                    }, function(reason) {
+                        deferred.reject(reason);
+                    });
+                } else {
+                    deferred.resolve(response);
                 }
                 response.$promise.then(function() {
                     response.$cache = response.$cache || {
@@ -346,6 +387,7 @@ angular.module("exResource", [ "ngResource" ]).run([ "$interval", "$xResourceCac
                     };
                     response.$cache.stale = false;
                     engine.store(response, parsedArguments.params);
+                    deferred.resolve(response);
                 });
                 return response;
             };
