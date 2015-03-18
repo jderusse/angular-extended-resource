@@ -1,5 +1,5 @@
 /*
- Angular Extended Resource v2.0.0
+ Angular Extended Resource v2.0.1
  License: MIT
 */
 'use strict';
@@ -10,7 +10,7 @@ angular.module('exResource', ['ngResource', 'LocalForageModule'])
     $xResourceCacheEngine.gc();
   }])
   .constant('$xResourceConfig', {
-    ttl: 1,
+    ttl: 864e6,
     prefix: ''
   })
   .factory('$xResourceCacheEngine', ['$window', '$xResourceConfig', '$localForage', function($window, $xResourceConfig, $localForage) {
@@ -49,15 +49,29 @@ angular.module('exResource', ['ngResource', 'LocalForageModule'])
       },
       gc: function gc() {
         var now = new Date().getTime();
-        var resourceRegExp = /^\[(\d{13,}),/;
         $localForage.keys().then(function(keys) {
-          angular.forEach(keys, function(key) {
+          var checkingCount = 0;
+          var checkKey = function (key) {
+            checkingCount ++;
+
             $localForage.getItem(key).then(function(data) {
               if (data[0] + $xResourceConfig.ttl < now) {
                 $localForage.removeItem(key);
               }
+
+              if (--checkingCount === 0) {
+                checkKeys();
+              }
             });
-          });
+          };
+
+          var checkKeys = function () {
+            for (var i=0, l=Math.min(1000, keys.length); i<l; i++) {
+              checkKey(keys.pop());
+            }
+          };
+
+          checkKeys();
         });
       }
     };
@@ -398,7 +412,7 @@ angular.module('exResource', ['ngResource', 'LocalForageModule'])
 
             var ref = engine.store(element, {}, element);
             if (angular.isDefined(ref)) {
-              return (angular.isArray(element) ? '#@' : '#$') + ref;
+              return (angular.isArray(element) ? '@' : '$') + ref;
             }
 
             return undefined;
@@ -447,11 +461,11 @@ angular.module('exResource', ['ngResource', 'LocalForageModule'])
           var engine = new Engine(null, {}, _this.splitConfigs[propertyPath]);
           pathExplorer.changeElement(resource, propertyPath, function(element) {
             if (angular.isString(element)) {
-              var key = element.substr(0, 2);
-              if (key === '#$' || key === '#@') {
-                var restored = key === '#$' ? {} : [];
+              var key = element[0];
+              if (key === '$' || key === '@') {
+                var restored = key === '$' ? {} : [];
                 deferred.counter ++;
-                $xResourceCacheEngine.get(element.substr(2)).then(function(cachedValue) {
+                $xResourceCacheEngine.get(element.substr(1)).then(function(cachedValue) {
                   angular.extend(restored, cachedValue);
                   engine.joinResource(restored).then(function() {
                     resolve();
