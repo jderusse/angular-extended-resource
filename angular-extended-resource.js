@@ -41,13 +41,24 @@ angular.module("exResource", [ "ngResource", "LocalForageModule" ]).run([ "$inte
         gc: function gc() {
             var now = new Date().getTime();
             $localForage.keys().then(function(keys) {
-                angular.forEach(keys, function(key) {
+                var checkingCount = 0;
+                var checkKey = function(key) {
+                    checkingCount++;
                     $localForage.getItem(key).then(function(data) {
                         if (data[0] + $xResourceConfig.ttl < now) {
                             $localForage.removeItem(key);
                         }
+                        if (--checkingCount === 0) {
+                            checkKeys();
+                        }
                     });
-                });
+                };
+                var checkKeys = function() {
+                    for (var i = 0, l = Math.min(1e3, keys.length); i < l; i++) {
+                        checkKey(keys.pop());
+                    }
+                };
+                checkKeys();
             });
         }
     };
@@ -234,7 +245,7 @@ angular.module("exResource", [ "ngResource", "LocalForageModule" ]).run([ "$inte
                     }
                     var ref = engine.store(element, {}, element);
                     if (angular.isDefined(ref)) {
-                        return (angular.isArray(element) ? "#@" : "#$") + ref;
+                        return (angular.isArray(element) ? "@" : "$") + ref;
                     }
                     return undefined;
                 });
@@ -265,11 +276,11 @@ angular.module("exResource", [ "ngResource", "LocalForageModule" ]).run([ "$inte
                 var engine = new Engine(null, {}, _this.splitConfigs[propertyPath]);
                 pathExplorer.changeElement(resource, propertyPath, function(element) {
                     if (angular.isString(element)) {
-                        var key = element.substr(0, 2);
-                        if (key === "#$" || key === "#@") {
-                            var restored = key === "#$" ? {} : [];
+                        var key = element[0];
+                        if (key === "$" || key === "@") {
+                            var restored = key === "$" ? {} : [];
                             deferred.counter++;
-                            $xResourceCacheEngine.get(element.substr(2)).then(function(cachedValue) {
+                            $xResourceCacheEngine.get(element.substr(1)).then(function(cachedValue) {
                                 angular.extend(restored, cachedValue);
                                 engine.joinResource(restored).then(function() {
                                     resolve();
