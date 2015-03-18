@@ -93,11 +93,14 @@ Advanced documentation on [dedicated project page](http://jeremy-derusse.github.
 Jérémy Derussé, https://github.com/jeremy-derusse
 
 ## Last Version
-v2.0.0
+v2.0.1
 
 ## Contributors
 
 ## Change Log
+* v2.0.1
+    - Optimize GC
+
 * v2.0.0
     - Replace localStorage by localForage
 
