@@ -93,11 +93,14 @@ Advanced documentation on [dedicated project page](http://jeremy-derusse.github.
 Jérémy Derussé, https://github.com/jeremy-derusse
 
 ## Last Version
-v2.0.1
+v2.0.2
 
 ## Contributors
 
 ## Change Log
+* v2.0.2
+    - Optimize Copy
+
 * v2.0.1
     - Optimize GC
 
