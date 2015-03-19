@@ -1,5 +1,5 @@
 /*
- Angular Extended Resource v2.0.1
+ Angular Extended Resource v2.0.2
  License: MIT
 */
 'use strict';
@@ -22,11 +22,11 @@ angular.module('exResource', ['ngResource', 'LocalForageModule'])
           delete value.$resolved;
           delete value.$cache;
 
-          $localForage.setItem(key, [new Date().getTime(), value]);
+          $localForage.setItem(key, [new Date().getTime(), JSON.stringify(value)]);
         };
 
         if (angular.isArray(value)) {
-          store(angular.copy(value));
+          store(value);
         } else {
           this.get(key).then(function(cachedValue) {
             store(angular.extend({}, cachedValue, value));
@@ -36,7 +36,7 @@ angular.module('exResource', ['ngResource', 'LocalForageModule'])
       get: function get(key) {
         return $localForage.getItem(key).then(function(data) {
           if (angular.isDefined(data)) {
-            var value = data[1];
+            var value = JSON.parse(data[1]);
             value.$cache = {
               updated: data[0],
               stale: true
@@ -151,7 +151,9 @@ angular.module('exResource', ['ngResource', 'LocalForageModule'])
           var url = template,
               urlParams = {};
 
-          angular.forEach(url.split(/\W/), function(param){
+          var urlSplit = url.split(/\W/);
+          for (var i=0, l=urlSplit.length; i<l; i++) {
+            var param = urlSplit[i];
             if (param === 'hasOwnProperty') {
               throw angular.$$minErr('$xResource')('badname', 'hasOwnProperty is not a valid parameter name.');
             }
@@ -160,7 +162,7 @@ angular.module('exResource', ['ngResource', 'LocalForageModule'])
             if (param && !(/^\\d+$/.test(param)) && (paramRegExp.test(url))) {
               urlParams[param] = paramRegExp;
             }
-          });
+          }
 
           this._parsed[template] = urlParams;
         }
@@ -275,9 +277,10 @@ angular.module('exResource', ['ngResource', 'LocalForageModule'])
               throw angular.$$minErr('$xResource')('badmember', 'Path "*" point to a non-array object.', path);
             }
 
-            angular.forEach(object, function(element, index) {
+            for(var index=0, l=object.length; index<l; index++) {
+              var element = object[index];
               object[index] = _this.changeElement(element, subPath, callback);
-            });
+            }
           } else {
             if (angular.isArray(object)) {
               throw angular.$$minErr('$xResource')('badmember', 'Path "' + path + '" point to a array object.', path);
@@ -403,21 +406,25 @@ angular.module('exResource', ['ngResource', 'LocalForageModule'])
        */
       Engine.prototype.splitResource = function splitResource(resource, templateParams) {
         var _this = this;
-        angular.forEach(this.splitProperties.sort().reverse(), function(propertyPath) {
+        var splitedProperties = this.splitProperties.sort().reverse();
+        var changeCallback = function(element) {
+          if (element === null) {
+            return null;
+          }
+
+          var ref = engine.store(element, {}, element);
+          if (angular.isDefined(ref)) {
+            return (angular.isArray(element) ? '@' : '$') + ref;
+          }
+
+          return undefined;
+        };
+
+        for (var i=0, l=splitedProperties.length; i<l; i++) {
+          var propertyPath = splitedProperties[i];
           var engine = new Engine(_this.template + '/' + propertyPath.replace(/(^\*|\.\*)/, ''), templateParams, _this.splitConfigs[propertyPath]);
-          pathExplorer.changeElement(resource, propertyPath, function(element) {
-            if (element === null) {
-              return null;
-            }
-
-            var ref = engine.store(element, {}, element);
-            if (angular.isDefined(ref)) {
-              return (angular.isArray(element) ? '@' : '$') + ref;
-            }
-
-            return undefined;
-          });
-        });
+          pathExplorer.changeElement(resource, propertyPath, changeCallback);
+        }
       };
 
       /**
@@ -431,7 +438,8 @@ angular.module('exResource', ['ngResource', 'LocalForageModule'])
           return;
         }
 
-        resource = angular.copy(resource);
+        //resource = angular.copy(resource);
+        resource = JSON.parse(JSON.stringify(resource));
 
         if (this.splitProperties.length) {
           this.splitResource(resource, this.getTemplateParams(callParams, resource, false));
@@ -457,30 +465,34 @@ angular.module('exResource', ['ngResource', 'LocalForageModule'])
         };
 
         var _this = this;
-        angular.forEach(this.splitProperties.sort(), function(propertyPath) {
-          var engine = new Engine(null, {}, _this.splitConfigs[propertyPath]);
-          pathExplorer.changeElement(resource, propertyPath, function(element) {
-            if (angular.isString(element)) {
-              var key = element[0];
-              if (key === '$' || key === '@') {
-                var restored = key === '$' ? {} : [];
-                deferred.counter ++;
-                $xResourceCacheEngine.get(element.substr(1)).then(function(cachedValue) {
-                  angular.extend(restored, cachedValue);
-                  engine.joinResource(restored).then(function() {
-                    resolve();
-                  });
+        var splitedProperties = this.splitProperties.sort();
+        var changeCallback = function(element) {
+          if (angular.isString(element)) {
+            var key = element[0];
+            if (key === '$' || key === '@') {
+              var restored = key === '$' ? {} : [];
+              deferred.counter ++;
+              $xResourceCacheEngine.get(element.substr(1)).then(function(cachedValue) {
+                angular.extend(restored, cachedValue);
+                engine.joinResource(restored).then(function() {
+                  resolve();
                 });
+              });
 
-                return restored;
-              } else {
-                return element;
-              }
+              return restored;
             } else {
               return element;
             }
-          });
-        });
+          } else {
+            return element;
+          }
+        };
+
+        for (var i=0, l=splitedProperties.length; i<l; i++) {
+          var propertyPath = splitedProperties[i];
+          var engine = new Engine(null, {}, _this.splitConfigs[propertyPath]);
+          pathExplorer.changeElement(resource, propertyPath, changeCallback);
+        }
         resolve();
 
         return deferred.promise;
